@@ -14,7 +14,8 @@ import {
   query,
   where,
   orderBy,
-  setDoc
+  setDoc,
+  limit as firestoreLimit
 } from 'firebase/firestore';
 import {
   ref,
@@ -266,8 +267,8 @@ export class FirebaseService {
     pagination: { page: number, limit: number, total: number, totalPages: number } 
   }>> {
     try {
-      let q = query(collection(db, 'logs'), orderBy('timestamp', 'desc'));
-      
+      let q = query(collection(db, 'logs'), orderBy('timestamp', 'desc'), firestoreLimit(500));
+
       if (action !== 'all') {
         q = query(q, where('action', '==', action));
       }
@@ -292,6 +293,22 @@ export class FirebaseService {
       };
     } catch (error: unknown) {
       return { success: false, error: error instanceof Error ? error.message : 'An error occurred' };
+    }
+  }
+
+  // Write an activity log entry (snake_case fields to match getAllActivityLogs' read shape).
+  // Swallows its own errors so logging can never break the action it records.
+  async createLog(entry: { userId: string; action: string; details: string; username?: string }): Promise<void> {
+    try {
+      await addDoc(collection(db, 'logs'), {
+        user_id: entry.userId,
+        action: entry.action,
+        details: entry.details,
+        username: entry.username ?? '',
+        timestamp: new Date().toISOString(),
+      });
+    } catch {
+      // intentionally ignored — activity logging is best-effort
     }
   }
 

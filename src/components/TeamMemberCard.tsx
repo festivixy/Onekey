@@ -8,7 +8,8 @@ const CONCERTMASTER_LABELS: Record<NonNullable<TeamMember['concertmasterType']>,
   principal_second: 'Principal Second Violin',
 };
 
-const SECTION_ROLE_LABELS: Record<SectionKey, string> = {
+const SECTION_ROLE_LABELS: Partial<Record<SectionKey, string>> = {
+  founders:       'Co-Founder',
   leadership:     'Manager',
   communications: 'Communications',
   coordinators:   'Homework Help Coordinator',
@@ -40,7 +41,10 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ member, compact = false
     if (currentSection && currentGroup && GROUP_SECTION_LABELS[currentSection]) {
       return GROUP_SECTION_LABELS[currentSection]?.[currentGroup];
     }
-    if (currentSection) return SECTION_ROLE_LABELS[currentSection];
+    if (currentSection) {
+      const label = SECTION_ROLE_LABELS[currentSection];
+      if (label) return label;
+    }
     return member.role;
   })();
 

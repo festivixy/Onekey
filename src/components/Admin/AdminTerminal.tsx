@@ -25,7 +25,7 @@ function parseArgs(input: string): string[] {
 }
 
 const SECTIONS: SectionKey[] =
-  ['leadership','communications','coordinators','finance','concertmasters','techdesign','alumni'];
+  ['founders','leadership','communications','coordinators','finance','concertmasters','techdesign','alumni'];
 
 const BANNER: Line[] = [
   L('┌──────────────────────────────────────────────────────┐', 'dim'),
@@ -52,8 +52,8 @@ const WIZARD_STEPS: WizardStep[] = [
   { key: 'sections', label: `Sections — comma-separated (${SECTIONS.join('|')})` },
   { key: 'group',    label: 'Group (onekey|vanstring)', optional: true, options: ['onekey','vanstring'],
     skipIf: d => !d.sections?.includes('leadership') && !d.sections?.includes('communications') },
-  { key: 'cm_type',  label: 'Concertmaster type (concertmaster|associate|principal_second)', optional: true,
-    options: ['concertmaster','associate','principal_second'],
+  { key: 'cm_type',  label: 'Concertmaster type (concertmaster|principal_second)', optional: true,
+    options: ['concertmaster','principal_second'],
     skipIf: d => !d.sections?.includes('concertmasters') },
   { key: 'bio',      label: 'Bio (wrap in quotes if it has spaces, or just type freely)' },
   { key: 'instagram',label: 'Instagram URL', optional: true },
@@ -387,8 +387,8 @@ const AdminTerminal: React.FC = () => {
         if (field === 'group' && !['onekey', 'vanstring'].includes(value)) {
           push(L('group must be onekey or vanstring', 'error')); return;
         }
-        if (field === 'cm-type' && !['concertmaster','associate','principal_second'].includes(value)) {
-          push(L('type must be concertmaster | associate | principal_second', 'error')); return;
+        if (field === 'cm-type' && !['concertmaster','principal_second'].includes(value)) {
+          push(L('type must be concertmaster | principal_second', 'error')); return;
         }
 
         push(L(`updating ${m.name}…`, 'dim'));

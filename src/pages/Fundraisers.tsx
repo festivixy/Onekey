@@ -9,8 +9,8 @@ gsap.registerPlugin(ScrollTrigger);
 const RICHMOND_PHOTO    = `${process.env.PUBLIC_URL}/pics/richmondhospital.jpg`;
 const CHECK_2023_PHOTO  = `${process.env.PUBLIC_URL}/pics/richmond_check_2023.jpg`;
 const PERFORM_PHOTOS    = [
-  { src: `${process.env.PUBLIC_URL}/pics/onekey.jpg`,      alt: 'OneKey performing at Richmond Hospital' },
-  { src: `${process.env.PUBLIC_URL}/pics/onekey_team.jpg`, alt: 'OneKey team performing at Richmond Hospital' },
+  { src: `${process.env.PUBLIC_URL}/pics/onekey.jpg`,      alt: 'Vanstring performing at Richmond Hospital' },
+  { src: `${process.env.PUBLIC_URL}/pics/onekey_team.jpg`, alt: 'Vanstring team performing at Richmond Hospital' },
 ];
 
 const TOTAL_RAISED  = 52000;  // cumulative across all years — running counter
@@ -122,7 +122,7 @@ const Fundraisers: React.FC = () => {
           }} />
           <img
             src={RICHMOND_PHOTO}
-            alt="OneKey presenting cheque to Richmond Hospital Foundation"
+            alt="Vanstring presenting cheque to Richmond Hospital Foundation"
             style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', position: 'relative', zIndex: 1 }}
           />
         </div>
@@ -228,7 +228,7 @@ const Fundraisers: React.FC = () => {
             A decade of giving back
           </h2>
           <p className="reveal-line" style={{ fontSize: '1rem', color: '#a8a29e', lineHeight: 1.8, marginBottom: 16 }}>
-            For {YEARS_ACTIVE} years, OneKey has partnered with the Richmond Hospital Foundation to support patient care and medical services in our community. Each year, our members host charity concerts and performances to raise funds for the Foundation.
+            For {YEARS_ACTIVE} years, Vanstring has partnered with the Richmond Hospital Foundation to support patient care and medical services in our community. Each year, our members host charity concerts and performances to raise funds for the Foundation.
           </p>
           <p className="reveal-line" style={{ fontSize: '1rem', color: '#a8a29e', lineHeight: 1.8 }}>
             Every dollar raised goes directly to the Foundation, helping fund equipment, programs, and care that touches thousands of lives in Richmond. It's one of our longest-running commitments, and one we'll continue for as long as our community keeps showing up.
@@ -269,7 +269,7 @@ const Fundraisers: React.FC = () => {
               <div style={{ position: 'relative', width: '100%', overflow: 'hidden', aspectRatio: '4/3', background: '#1a1714' }}>
                 <img
                   src={RICHMOND_PHOTO}
-                  alt="OneKey presenting cheque to Richmond Hospital Foundation, 2025"
+                  alt="Vanstring presenting cheque to Richmond Hospital Foundation, 2025"
                   style={{
                     width: '100%', height: '100%', objectFit: 'contain', display: 'block',
                   }}
@@ -312,7 +312,7 @@ const Fundraisers: React.FC = () => {
               <div style={{ position: 'relative', width: '100%', overflow: 'hidden', aspectRatio: '4/3', background: '#1a1714' }}>
                 <img
                   src={CHECK_2023_PHOTO}
-                  alt="OneKey members presenting a cheque to Richmond Hospital Foundation in December 2023"
+                  alt="Vanstring members presenting a cheque to Richmond Hospital Foundation in December 2023"
                   style={{
                     width: '100%', height: '100%', objectFit: 'cover',
                     objectPosition: 'center top',

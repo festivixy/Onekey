@@ -63,18 +63,6 @@
       document.documentElement.scrollTop = 0;
     </script>
     
-    <!-- Debug tools for development -->
-    <script>
-      // Only load debug tools in development
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        const script = document.createElement('script');
-        script.src = '%PUBLIC_URL%/debug.js';
-        script.onload = function() {
-          console.log('🔧 OneKey Debug Tools ready!');
-        };
-        document.head.appendChild(script);
-      }
-    </script>
   </head>
   <body style="background:#1c1917;margin:0">
     <noscript>You need to enable JavaScript to run this app.</noscript>
