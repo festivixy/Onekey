@@ -1,30 +1,45 @@
 rules_version = '2';
 
-// Firebase Storage security rules
-// Deploy with: firebase deploy --only storage
+// Firebase Storage security rules — HARDENED (admin-only writes).
 //
-// To apply via Console instead: copy this content into
-//   Firebase Console → Storage → Rules tab → Publish
+// Deploy with: firebase deploy --only storage
+// Or paste into Firebase Console → Storage → Rules → Publish.
+//
+// ⚠️ Uploads now require an admin/super_admin role (read from Firestore users/{uid}.role),
+//    matching firestore.rules. Reads stay public so images render on the site.
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // Photos uploaded via the admin Photo Manager — public reads, signed-in writes
+    function isAdmin() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role
+             in ['admin', 'super_admin'];
+    }
+    function validImage() {
+      return request.resource.size < 12 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // Photos uploaded via the admin Photo Manager
     match /photos/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null
-                   && request.resource.size < 12 * 1024 * 1024
-                   && request.resource.contentType.matches('image/.*');
+      allow write: if isAdmin() && validImage();
     }
 
-    // Team member photos uploaded from admin
+    // Team member photos uploaded from the admin panel
     match /team/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null
-                   && request.resource.size < 12 * 1024 * 1024
-                   && request.resource.contentType.matches('image/.*');
+      allow write: if isAdmin() && validImage();
     }
 
-    // Any other path: read-only public; no write
+    // Generic image uploads (timeline event photos, team crops via uploadImage)
+    match /uploads/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && validImage();
+    }
+
+    // Anything else: public read, no write
     match /{allPaths=**} {
       allow read: if true;
       allow write: if false;
