@@ -839,6 +839,7 @@ const AdminDashboard: React.FC = () => {
                   onChange={(e) => setRoleFilter(e.target.value)}
                 >
                   <option value="all">All Sections</option>
+                  <option value="founders">Founders</option>
                   <option value="leadership">Leadership</option>
                   <option value="communications">Communications</option>
                   <option value="coordinators">Coordinators</option>
@@ -1754,8 +1755,8 @@ const AdminDashboard: React.FC = () => {
               <div className="form-group">
                 <label>Sections</label>
                 <div className="sections-checklist">
-                  {(['leadership','communications','coordinators','finance','concertmasters','techdesign','alumni'] as TeamMember['sections']).map(s => {
-                    const LABELS: Record<string, string> = { leadership:'Leadership', communications:'Communications', coordinators:'Coordinators', finance:'Financial Managers', concertmasters:'Concertmasters', techdesign:'Tech & Design', alumni:'Alumni' };
+                  {(['founders','leadership','communications','coordinators','finance','concertmasters','techdesign','alumni'] as TeamMember['sections']).map(s => {
+                    const LABELS: Record<string, string> = { founders:'Founders', leadership:'Leadership', communications:'Communications', coordinators:'Coordinators', finance:'Financial Managers', concertmasters:'Concertmasters', techdesign:'Tech & Design', alumni:'Alumni' };
                     const checked = newTeamData.sections.includes(s);
                     return (
                       <label key={s} className="section-check-item">
@@ -1868,8 +1869,8 @@ const AdminDashboard: React.FC = () => {
               <div className="form-group">
                 <label>Sections</label>
                 <div className="sections-checklist">
-                  {(['leadership','communications','coordinators','finance','concertmasters','techdesign','alumni'] as TeamMember['sections']).map(s => {
-                    const LABELS: Record<string, string> = { leadership:'Leadership', communications:'Communications', coordinators:'Coordinators', finance:'Financial Managers', concertmasters:'Concertmasters', techdesign:'Tech & Design', alumni:'Alumni' };
+                  {(['founders','leadership','communications','coordinators','finance','concertmasters','techdesign','alumni'] as TeamMember['sections']).map(s => {
+                    const LABELS: Record<string, string> = { founders:'Founders', leadership:'Leadership', communications:'Communications', coordinators:'Coordinators', finance:'Financial Managers', concertmasters:'Concertmasters', techdesign:'Tech & Design', alumni:'Alumni' };
                     const checked = newTeamData.sections.includes(s);
                     return (
                       <label key={s} className="section-check-item">

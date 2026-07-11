@@ -25,7 +25,7 @@ function parseArgs(input: string): string[] {
 }
 
 const SECTIONS: SectionKey[] =
-  ['leadership','communications','coordinators','finance','concertmasters','techdesign','alumni'];
+  ['founders','leadership','communications','coordinators','finance','concertmasters','techdesign','alumni'];
 
 const BANNER: Line[] = [
   L('┌──────────────────────────────────────────────────────┐', 'dim'),

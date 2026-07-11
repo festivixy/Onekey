@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { apiService } from '../services/firebaseService';
 
-export type SectionKey = 'leadership' | 'communications' | 'coordinators' | 'finance' | 'concertmasters' | 'techdesign' | 'alumni';
+export type SectionKey = 'founders' | 'leadership' | 'communications' | 'coordinators' | 'finance' | 'concertmasters' | 'techdesign' | 'alumni';
 
 export interface TeamMember {
   id: string;
@@ -19,7 +19,7 @@ export interface TeamMember {
   updatedAt: string;
 }
 
-const SECTION_KEYS: SectionKey[] = ['leadership', 'communications', 'coordinators', 'finance', 'concertmasters', 'techdesign', 'alumni'];
+const SECTION_KEYS: SectionKey[] = ['founders', 'leadership', 'communications', 'coordinators', 'finance', 'concertmasters', 'techdesign', 'alumni'];
 
 type TeamMemberRecord = Record<string, unknown> & {
   id?: unknown;
@@ -91,7 +91,7 @@ const SEED_MEMBERS: Omit<TeamMember, 'id'>[] = [
     bio: "I'm Curtis, a grade 10 student at Collingwood Secondary School. I'm grateful to be serving as one of the founders of Onekey as well as the General Manager of Vanstring. I have a passion for sciences and I waste much of my time preparing for the international science olympiads. In my spare time, I play the piano and conduct research on group theory as well as doing my little engineering projects.",
     instagram: 'https://www.instagram.com/icyz_wx/',
     image: '/pics/curtiswei.jpg',
-    sections: ['leadership'],
+    sections: ['founders', 'leadership'],
     group: 'onekey',
     isActive: true,
     createdAt: '2024-01-01T00:00:00Z',
@@ -167,7 +167,7 @@ const SEED_MEMBERS: Omit<TeamMember, 'id'>[] = [
     bio: "Eliza is one of the co-founders and co-managers at Onekey. She is currently attending university in Philadelphia at Haverford University. One fun fact about her is that she has an extensive collection of stuffed animals, most of which are… jellycat pigs. When she's not performing at senior homes, Eliza enjoys spending her free time participating in robotics and making pottery.",
     instagram: 'https://www.instagram.com/elizasun530/',
     image: '/pics/elizasun.jpg',
-    sections: ['alumni'],
+    sections: ['founders'],
     isActive: true,
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z',
@@ -179,7 +179,7 @@ const SEED_MEMBERS: Omit<TeamMember, 'id'>[] = [
     bio: 'Grace is a passionate musician and one of the co-founders of OneKey. With an ARCT-level piano background and a love for community, Grace helped create OneKey to connect music students and let others see the joy of sharing music and knowledge. She finds fulfillment in sharing joy through student-led concerts and tutoring to create a meaningful impact. Grace is dedicated to fostering supportive, inspiring spaces where young musicians can grow and support one another.',
     instagram: 'https://www.instagram.com/joyleaf7/',
     image: '/pics/grace.jpg',
-    sections: ['alumni'],
+    sections: ['founders'],
     isActive: true,
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z',
@@ -191,7 +191,7 @@ const SEED_MEMBERS: Omit<TeamMember, 'id'>[] = [
     bio: "Jack is an undergraduate student at Pomona College studying International Relations. He's greatly enjoyed working with the Onekey team and sharing his love for music with seniors and young performers.",
     instagram: 'https://www.instagram.com/jiawei_wang_06/',
     image: '/pics/jiaweiwang.jpg',
-    sections: ['alumni'],
+    sections: ['founders'],
     isActive: true,
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z',
@@ -224,6 +224,9 @@ const SEED_MEMBERS: Omit<TeamMember, 'id'>[] = [
     updatedAt: '2024-01-01T00:00:00Z',
   },
 ];
+
+// Founders promoted to the top-of-page Founders section (matched by display name)
+const FOUNDER_NAMES = new Set(['Curtis Wei', 'Eliza Sun', 'Grace Xu', 'Jack Wang']);
 
 interface TeamState {
   teamMembers: TeamMember[];
@@ -270,6 +273,22 @@ export const useTeamStore = create<TeamState>()((set, get) => ({
         toMigrate.forEach(m => {
           m.sections = normalizeSections(m);
         });
+      }
+
+      // Promote the four founders → add 'founders', drop 'alumni' (one-time, idempotent, matched by name)
+      const foundersToMigrate = members.filter(m => {
+        if (!FOUNDER_NAMES.has(stringValue(m.name))) return false;
+        const current = normalizeSections(m);
+        return !current.includes('founders') || current.includes('alumni');
+      });
+      if (foundersToMigrate.length > 0) {
+        await Promise.all(foundersToMigrate.map(m => {
+          const next: SectionKey[] = Array.from(
+            new Set<SectionKey>([...normalizeSections(m).filter(s => s !== 'alumni'), 'founders'])
+          );
+          m.sections = next;
+          return apiService.updateTeamMember(stringValue(m.id), { sections: next });
+        }));
       }
 
       set({ teamMembers: members.map(normalizeTeamMember).filter(m => m.isActive !== false), isLoading: false });

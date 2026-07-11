@@ -169,6 +169,13 @@ const MeetOurTeam: React.FC = () => {
         }} />
       </header>
 
+      <TeamSection
+        title="Founders"
+        description="The students who started OneKey"
+        members={getTeamMembersBySection('founders')}
+        currentSection="founders"
+      />
+
       <SplitSection
         title="Leadership"
         description="Leaders driving our vision"
@@ -222,15 +229,6 @@ const MeetOurTeam: React.FC = () => {
         description="Building the website, designing logos, and creating the tools that keep OneKey running"
         members={getTeamMembersBySection('techdesign')}
         currentSection="techdesign"
-      />
-
-      <TeamSection
-        title="Alumni"
-        description="Founding members who continue to inspire our mission"
-        members={getTeamMembersBySection('alumni')}
-        currentSection="alumni"
-        compact
-        grid
       />
     </div>
   );
