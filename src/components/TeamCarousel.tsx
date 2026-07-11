@@ -92,16 +92,17 @@ const TeamCarousel: React.FC<Props> = ({ members, compact, hideBio, currentSecti
     const el = trackRef.current;
     if (!el || el.scrollWidth <= el.clientWidth) return;
 
-    event.preventDefault();
-    el.classList.add('tc__track--wheel-scrolling');
-
     const unit = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : el.clientHeight;
     const deltaX = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? event.deltaX : event.deltaX * unit;
     const deltaY = event.deltaMode === WheelEvent.DOM_DELTA_PIXEL ? event.deltaY : event.deltaY * unit;
-    const delta = Math.abs(deltaX) > Math.abs(deltaY) ? deltaX : deltaY;
-    if (!delta) return;
 
-    targetVelocityRef.current = Math.max(-140, Math.min(140, targetVelocityRef.current + delta * 0.18));
+    // Only capture horizontal-intent wheels; let vertical scrolls move the page, not the carousel.
+    if (Math.abs(deltaX) <= Math.abs(deltaY)) return;
+
+    event.preventDefault();
+    el.classList.add('tc__track--wheel-scrolling');
+
+    targetVelocityRef.current = Math.max(-140, Math.min(140, targetVelocityRef.current + deltaX * 0.18));
 
     if (animationFrameRef.current === null) {
       animationFrameRef.current = requestAnimationFrame(runWheelAnimation);
