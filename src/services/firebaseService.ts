@@ -14,7 +14,8 @@ import {
   query,
   where,
   orderBy,
-  setDoc
+  setDoc,
+  limit as firestoreLimit
 } from 'firebase/firestore';
 import {
   ref,
@@ -266,8 +267,8 @@ export class FirebaseService {
     pagination: { page: number, limit: number, total: number, totalPages: number } 
   }>> {
     try {
-      let q = query(collection(db, 'logs'), orderBy('timestamp', 'desc'));
-      
+      let q = query(collection(db, 'logs'), orderBy('timestamp', 'desc'), firestoreLimit(500));
+
       if (action !== 'all') {
         q = query(q, where('action', '==', action));
       }

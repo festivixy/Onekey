@@ -16,11 +16,6 @@ export interface User {
   avatar?: string;
 }
 
-export interface UserCredentials {
-  userId: string;
-  passwordHash: string; // In production, this would be properly hashed
-}
-
 export interface ActivityLog {
   id: string;
   userId: string;
