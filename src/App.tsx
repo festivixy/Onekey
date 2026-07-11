@@ -15,6 +15,7 @@ import VanstringHome from './pages/VanstringHome';
 import Fundraisers from './pages/Fundraisers';
 import VancouverAquarium from './pages/VancouverAquarium';
 import VTC from './pages/VTC';
+import NotFound from './pages/NotFound';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -37,6 +38,7 @@ function AnimatedRoutes() {
           <Route path="/vtc"        element={<VTC />} />
           <Route path="/vanstring"  element={<VanstringHome />} />
           <Route path="/admin"     element={<AdminDashboard />} />
+          <Route path="*"          element={<NotFound />} />
         </Routes>
       </motion.div>
     </AnimatePresence>
