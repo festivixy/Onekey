@@ -22,6 +22,8 @@ const AdminDashboard: React.FC = () => {
     updateUserStatus,
     changePassword,
     fetchUsers,
+    logActivity,
+    fetchAllActivityLogs,
     logout,
   } = useAuthStore();
 
@@ -93,8 +95,9 @@ const AdminDashboard: React.FC = () => {
       fetchUsers();
       fetchEvents();
       fetchTeamMembers();
+      fetchAllActivityLogs();
     }
-  }, [isAuthenticated, user, fetchUsers, fetchEvents, fetchTeamMembers]);
+  }, [isAuthenticated, user, fetchUsers, fetchEvents, fetchTeamMembers, fetchAllActivityLogs]);
 
   // Remove the redirect effect
   
@@ -201,7 +204,7 @@ const AdminDashboard: React.FC = () => {
       return;
     }
     
-    await addUser({
+    const created = await addUser({
       username: newUserData.username,
       email: newUserData.email,
       firstName: newUserData.firstName,
@@ -210,9 +213,9 @@ const AdminDashboard: React.FC = () => {
       password: newUserData.password
     });
     
-    // if (success && user) {
-    //   logActivity(user.id, 'add_user', `Created new user: ${newUserData.username} (${newUserData.role})`);
-    // }
+    if (created && user) {
+      logActivity(user.id, 'add_user', `Created user: ${newUserData.username} (${newUserData.role})`);
+    }
     
     setShowCreateUserModal(false);
     setNewUserData({
@@ -274,10 +277,9 @@ const AdminDashboard: React.FC = () => {
         createdBy: user.id
       });
       
-      // if (newEvent) {
-      //   // Log the event creation
-      //   logActivity(user.id, 'add_event', `Created event: ${newEvent.name} (${newEvent.category})`);
-      // }
+      if (user) {
+        logActivity(user.id, 'add_event', `Created event: ${newEventData.name} (${newEventData.category})`);
+      }
       
       setShowCreateEventModal(false);
       setNewEventData({
@@ -312,12 +314,11 @@ const AdminDashboard: React.FC = () => {
 
   const handleDeleteEvent = async (eventId: string) => {
     if (window.confirm('Are you sure you want to delete this event?')) {
+      const deleted = events.find(e => e.id === eventId);
       await removeEvent(eventId);
-      
-      // Log the event deletion
-      // if (user && event) {
-      //   logActivity(user.id, 'delete_event', `Deleted event: ${event.name} (${event.category})`);
-      // }
+      if (user) {
+        logActivity(user.id, 'delete_event', `Deleted event: ${deleted?.name ?? eventId}`);
+      }
     }
   };
 
@@ -374,8 +375,9 @@ const AdminDashboard: React.FC = () => {
         photos: photoUrls
       });
       
-      // Log the event update
-      // logActivity(user.id, 'update_event', `Updated event: ${editingEvent.name} (${editingEvent.category})`);
+      if (user && editingEvent) {
+        logActivity(user.id, 'update_event', `Updated event: ${editingEvent.name} (${editingEvent.category})`);
+      }
       
       setShowEditEventModal(false);
       setEditingEvent(null);
@@ -520,13 +522,12 @@ const AdminDashboard: React.FC = () => {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+    if (window.confirm('Delete this user?\n\nThis removes their admin record, but their login (Firebase Auth account) is NOT deleted here — it must be removed separately in the Firebase Console. This cannot be undone.')) {
+      const deleted = users.find(u => u.id === userId);
       await removeUser(userId);
-      
-      // Log the user deletion
-      // if (user && targetUser) {
-      //   logActivity(user.id, 'remove_user', `Deleted user: ${targetUser.username}`);
-      // }
+      if (user) {
+        logActivity(user.id, 'remove_user', `Deleted user: ${deleted?.username ?? userId}`);
+      }
     }
   };
 

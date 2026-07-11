@@ -383,6 +383,9 @@ export const useAuthStore = create<AuthState>()(
         set(state => ({
           activityLogs: [newLog, ...state.activityLogs].slice(0, 1000) // Keep last 1000 logs
         }));
+
+        // Persist to Firestore so the log survives reloads (createLog swallows its own errors)
+        apiService.createLog({ userId, action, details, username: get().user?.username });
       },
 
       fetchAllActivityLogs: async (page = 1, limit = 100, action = 'all') => {
