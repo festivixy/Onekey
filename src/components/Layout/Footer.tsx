@@ -24,7 +24,10 @@ const Footer = () => {
           </p>
           <div className="flex space-x-3">
             <motion.a
-              href="#"
+              href="https://instagram.com/on3keymusic"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="OneKey on Instagram"
               className="p-1.5 transition-all duration-300 rounded-lg bg-white/5 text-stone-400 hover:bg-earth-500/20 hover:text-earth-300 backdrop-blur-sm border border-white/10 hover:border-earth-400/30"
               whileHover={{ scale: 1.1, y: -2 }}
               whileTap={{ scale: 0.95 }}
