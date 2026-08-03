@@ -182,19 +182,19 @@ export const useAuthStore = create<AuthState>()(
               error: null
             });
           } else {
-            set({ 
-              user: null, 
-              isAuthenticated: false, 
+            set({
+              user: null,
+              isAuthenticated: false,
               isLoading: false,
-              error: response.error || 'Failed to get user'
+              error: null
             });
           }
         } catch (error) {
-          set({ 
-            user: null, 
-            isAuthenticated: false, 
+          set({
+            user: null,
+            isAuthenticated: false,
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Failed to get user'
+            error: null
           });
         }
       },
@@ -341,29 +341,12 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      changePassword: async (userId, currentPassword, newPassword) => {
+      changePassword: async (_userId, currentPassword, newPassword) => {
         set({ isLoading: true, error: null });
-        try {
-          const { auth } = await import('../lib/firebase');
-          const { updatePassword, reauthenticateWithCredential, EmailAuthProvider } = await import('firebase/auth');
-          const firebaseUser = auth.currentUser;
-          if (!firebaseUser || firebaseUser.uid !== userId || !firebaseUser.email) {
-            set({ isLoading: false, error: 'You can only change your own password' });
-            return false;
-          }
-          const credential = EmailAuthProvider.credential(firebaseUser.email, currentPassword);
-          await reauthenticateWithCredential(firebaseUser, credential);
-          await updatePassword(firebaseUser, newPassword);
-          set({ isLoading: false });
-          return true;
-        } catch (error: unknown) {
-          const code = (error as { code?: string })?.code;
-          const msg = code === 'auth/wrong-password' || code === 'auth/invalid-credential'
-            ? 'Current password is incorrect'
-            : error instanceof Error ? error.message : 'Failed to change password';
-          set({ isLoading: false, error: msg });
-          return false;
-        }
+        const res = await apiService.changePassword(currentPassword, newPassword);
+        if (res.success) { set({ isLoading: false }); return true; }
+        set({ isLoading: false, error: res.error ?? 'Failed to change password' });
+        return false;
       },
 
       logActivity: (userId, action, details) => {
@@ -378,9 +361,6 @@ export const useAuthStore = create<AuthState>()(
         set(state => ({
           activityLogs: [newLog, ...state.activityLogs].slice(0, 1000) // Keep last 1000 logs
         }));
-
-        // Persist to Firestore so the log survives reloads (createLog swallows its own errors)
-        apiService.createLog({ userId, action, details, username: get().user?.username });
       },
 
       fetchAllActivityLogs: async (page = 1, limit = 100, action = 'all') => {

@@ -2,7 +2,7 @@
   "name": "onekey-react",
   "version": "1.0.0",
   "private": true,
-  "homepage": ".",
+  "homepage": "/",
   "dependencies": {
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^16.3.2",
@@ -13,9 +13,10 @@
     "@types/react-dom": "^19.2.3",
     "clsx": "^2.1.1",
     "date-fns": "^2.29.1",
-    "firebase": "^12.13.0",
+    "firebase-admin": "^14.2.0",
     "framer-motion": "^12.39.0",
     "gsap": "^3.15.0",
+    "hono": "^4.6.0",
     "lucide-react": "^0.577.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
@@ -33,7 +34,9 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "lint": "eslint src --ext .ts,.tsx --max-warnings 0"
+    "lint": "eslint src --ext .ts,.tsx --max-warnings 0",
+    "test:api": "vitest run --config vitest.config.ts",
+    "dev:api": "wrangler pages dev build --d1 DB --r2 BUCKET"
   },
   "eslintConfig": {
     "extends": [
@@ -64,11 +67,14 @@
     }
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.7.1",
     "@tailwindcss/postcss": "^4.3.0",
     "autoprefixer": "^10.5.0",
     "gh-pages": "^6.3.0",
     "postcss": "8.5.15",
     "tailwindcss": "^3.4.17",
-    "webpack-dev-server": "^4.15.2"
+    "vitest": "^2.1.0",
+    "webpack-dev-server": "^4.15.2",
+    "wrangler": "^4.118.0"
   }
 }

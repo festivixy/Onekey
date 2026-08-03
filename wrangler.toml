@@ -1,0 +1,13 @@
+name = "onekey"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "build"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "onekey-db"
+database_id = "a357af7f-3470-4d36-9973-1d8b5af07416"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "onekey-assets"

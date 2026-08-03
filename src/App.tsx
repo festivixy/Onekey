@@ -1,11 +1,9 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { onAuthStateChanged } from 'firebase/auth';
 import Layout from './components/Layout/Layout';
 import ScrollToTop from './components/ScrollToTop';
 import { useAuthStore } from './store/authStore';
-import { auth } from './lib/firebase';
 import Home from './pages/Home';
 import About from './pages/About';
 import Timeline from './pages/Timeline';
@@ -47,18 +45,10 @@ function AnimatedRoutes() {
 
 function App() {
   const getCurrentUser = useAuthStore(state => state.getCurrentUser);
-  const logout = useAuthStore(state => state.logout);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        getCurrentUser();
-      } else {
-        logout();
-      }
-    });
-    return () => unsubscribe();
-  }, [getCurrentUser, logout]);
+    getCurrentUser();
+  }, [getCurrentUser]);
 
   return (
     <>

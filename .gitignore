@@ -73,3 +73,6 @@ desktop.ini
 
 # TypeScript build info
 *.tsbuildinfo
+
+# migration output
+/migrate/out/
