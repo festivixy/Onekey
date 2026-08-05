@@ -29,10 +29,10 @@
   "scripts": {
     "start": "react-scripts start",
     "dev": "react-scripts start",
-    "dev:frontend": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
+    "test:frontend": "react-scripts test",
     "lint": "eslint src --ext .ts,.tsx --max-warnings 0",
     "test:api": "vitest run --config vitest.config.ts",
     "dev:api": "wrangler pages dev build --d1 DB --r2 BUCKET"
