@@ -45,6 +45,14 @@ pids
 /backend/uploads/*
 !/backend/uploads/.gitkeep
 
+# Photos live in cloud storage (R2), never in the repo
+/public/pics/
+/public/slideshow/
+/public/others/
+/public/1
+/public/2
+/public/3
+
 # Generated deployment files
 start-production.sh
 ecosystem.config.js
@@ -76,3 +84,6 @@ desktop.ini
 
 # migration output
 /migrate/out/
+# Cloudflare local dev (secrets + local D1/R2 state)
+.dev.vars
+/.wrangler
