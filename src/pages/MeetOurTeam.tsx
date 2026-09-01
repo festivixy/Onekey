@@ -1,235 +1,319 @@
-import React, { useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTeamStore, TeamMember, SectionKey } from '../store/teamStore';
-import TeamMemberCard from '../components/TeamMemberCard';
-import TeamCarousel from '../components/TeamCarousel';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useAuthStore } from '../store/authStore';
+import { apiService } from '../services/firebaseService';
+import { resolveTeamImageSrc } from '../utils/teamImageUrl';
+import { useNkPageMotion } from '../components/nocturne/motion';
+import { DEFAULT_TEAM_LAYOUT, TeamLayout, SectionLayout, normalizeTeamLayout, sectionLayoutOf } from '../config/teamLayout';
 
-gsap.registerPlugin(ScrollTrigger);
+const ROMAN = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii'];
 
-interface TeamSectionProps {
-  title: string;
-  description?: string;
-  members: TeamMember[];
-  compact?: boolean;
-  hideBio?: boolean;
-  grid?: boolean;
-  currentSection?: SectionKey;
-}
+export const SECTION_LABELS: Record<SectionKey, string> = {
+  founders: 'Founders',
+  leadership: 'Leadership',
+  communications: 'Senior Home Communications',
+  coordinators: 'Homework Help Coordinators',
+  finance: 'Finance',
+  concertmasters: 'Concertmasters',
+  techdesign: 'Tech & Design',
+  alumni: 'Alumni',
+};
 
-const TeamSection: React.FC<TeamSectionProps> = ({ title, description, members, compact, hideBio, grid, currentSection }) => (
-  <section className="team-section">
-    <div className="container">
-      <header className="team-section__intro">
-        <h2 className="team-section__heading">{title}</h2>
-        {description && <p className="team-section__desc">{description}</p>}
-      </header>
+const SECTION_SUBTITLES: Partial<Record<SectionKey, string>> = {
+  founders: 'the four who began it, 2020',
+  alumni: 'the members who came before',
+};
 
-      {grid ? (
-        <div className={compact ? 'team-grid team-grid--compact' : 'team-grid'}>
-          {members.map((m) => (
-            <TeamMemberCard key={m.id} member={m} compact={compact} hideBio={hideBio} currentSection={currentSection} />
-          ))}
-        </div>
-      ) : (
-        <TeamCarousel members={members} compact={compact} hideBio={hideBio} currentSection={currentSection} />
-      )}
-    </div>
-  </section>
-);
+const initialsOf = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0]?.toUpperCase() ?? '')
+    .join('');
 
-interface SplitSectionProps {
-  title: string;
-  description?: string;
-  leftMembers: TeamMember[];
-  rightMembers: TeamMember[];
-  leftLabel?: string;
-  rightLabel?: string;
-  fitCards?: boolean;
-  hideBio?: boolean;
-  currentSection?: SectionKey;
-  leftGroup?: 'onekey' | 'vanstring';
-  rightGroup?: 'onekey' | 'vanstring';
-}
+const PencilOverlay: React.FC<{ id: string }> = ({ id }) => {
+  const navigate = useNavigate();
+  return (
+    <button
+      aria-label="Edit member"
+      onClick={e => {
+        e.preventDefault();
+        navigate(`/admin?tab=team&edit=${id}`);
+      }}
+      style={{
+        position: 'absolute', top: 10, right: 10, zIndex: 5, width: 28, height: 28,
+        display: 'grid', placeItems: 'center', border: '1px solid rgba(124,92,255,0.5)',
+        borderRadius: 999, background: '#ffffff', color: 'var(--nk-accent-400)', cursor: 'pointer',
+      }}
+    >
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
+      </svg>
+    </button>
+  );
+};
 
-const SplitSection: React.FC<SplitSectionProps> = ({
-  title, description, leftMembers, rightMembers,
-  leftLabel, rightLabel, fitCards, hideBio, currentSection,
-  leftGroup, rightGroup,
-}) => (
-  <section className="team-section">
-    <div className="container">
-      <header className="team-section__intro">
-        <h2 className="team-section__heading">{title}</h2>
-        {description && <p className="team-section__desc">{description}</p>}
-      </header>
-      <div className={`leadership-split${fitCards ? ' leadership-split--fit' : ''}`}>
-        <div className="leadership-split__left" style={{ flex: Math.max(leftMembers.length, 1) }}>
-          {leftLabel && <span className="leadership-split__label">{leftLabel}</span>}
-          <TeamCarousel members={leftMembers} hideBio={hideBio} currentSection={currentSection} currentGroup={leftGroup} />
-        </div>
-        <div className="leadership-split__divider" />
-        <div className="leadership-split__right" style={{ flex: Math.max(rightMembers.length, 1) }}>
-          {rightLabel && <span className="leadership-split__label">{rightLabel}</span>}
-          <TeamCarousel members={rightMembers} hideBio={hideBio} currentSection={currentSection} currentGroup={rightGroup} />
-        </div>
+const MemberCard: React.FC<{ member: TeamMember; layout: SectionLayout; editable: boolean }> = ({ member, layout, editable }) => {
+  const img = resolveTeamImageSrc(member.image);
+  const radius = layout.shape === 'circle' ? '50%' : 8;
+
+  if (layout.size === 'compact') {
+    return (
+      <div className="nk-pcard nk-compact" style={{ position: 'relative' }}>
+        {editable && <PencilOverlay id={member.id} />}
+        {img ? (
+          <img className="nk-smallphoto" src={img} alt={member.name} style={{ borderRadius: radius }} />
+        ) : (
+          <div className="nk-smallinit" style={{ borderRadius: radius }}>{initialsOf(member.name)}</div>
+        )}
+        <span style={{ fontFamily: 'var(--nk-serif)', fontWeight: 700, fontSize: 17, color: 'var(--nk-accent-300)', marginTop: 8 }}>{member.name}</span>
+        {member.role && <span style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--nk-accent-400)', marginTop: 2 }}>{member.role}</span>}
       </div>
-    </div>
-  </section>
-);
-
-const MeetOurTeam: React.FC = () => {
-  const { teamMembers, getTeamMembersBySection, getTeamMembersBySectionAndGroup, fetchTeamMembers } = useTeamStore();
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => { fetchTeamMembers(); }, [fetchTeamMembers]);
-
-  // Hero entrance + bind section scroll triggers (regardless of data state)
-  // Runs once on mount. Section elements get hidden initially and animated in by ScrollTrigger
-  // as the user scrolls — independent of whether team data has loaded yet.
-  useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      // Initial states — hide everything that will animate in
-      gsap.set('.team-hero__title',         { clipPath: 'inset(0 100% 0 0)', y: 30, opacity: 0 });
-      gsap.set('.team-hero__line',          { scaleX: 0, transformOrigin: 'left center' });
-      gsap.set('.team-section__heading',    { y: 40, opacity: 0, clipPath: 'inset(0 0 100% 0)' });
-      gsap.set('.team-section__desc',       { y: 20, opacity: 0 });
-      gsap.set('.leadership-split__label',  { y: -8, opacity: 0, scale: 0.8 });
-      gsap.set('.leadership-split__divider',{ scaleY: 0, transformOrigin: 'center center' });
-
-      // Hero — animate in immediately
-      gsap.to('.team-hero__title',
-        { clipPath: 'inset(0 0% 0 0)', y: 0, opacity: 1, duration: 0.7, ease: 'power3.out', delay: 0.05 }
-      );
-      gsap.to('.team-hero__line',
-        { scaleX: 1, duration: 0.7, ease: 'power3.out', delay: 0.35 }
-      );
-
-      // Sections — bind scroll-trigger reveals for everything that's static (headings, descriptions, labels, divider)
-      const sections = gsap.utils.toArray<HTMLElement>('.team-section');
-      sections.forEach((section) => {
-        const heading = section.querySelector('.team-section__heading');
-        const desc    = section.querySelector('.team-section__desc');
-        const labels  = section.querySelectorAll('.leadership-split__label');
-        const divider = section.querySelector('.leadership-split__divider');
-
-        const tl = gsap.timeline({
-          scrollTrigger: { trigger: section, start: 'top 88%', once: true },
-          defaults: { ease: 'power3.out' },
-        });
-
-        if (heading) tl.to(heading, { y: 0, opacity: 1, clipPath: 'inset(0 0 0% 0)', duration: 0.6 });
-        if (desc)    tl.to(desc,    { y: 0, opacity: 1, duration: 0.45 }, '-=0.4');
-        if (labels.length > 0) {
-          tl.to(labels, { y: 0, opacity: 1, scale: 1, duration: 0.4, stagger: 0.08, ease: 'back.out(1.7)' }, '-=0.3');
-        }
-        if (divider) tl.to(divider, { scaleY: 1, duration: 0.5, ease: 'power2.out' }, '-=0.4');
-      });
-    }, rootRef);
-
-    return () => ctx.revert();
-  }, []);
-
-  // Card reveal — fires once team data lands; cards don't exist before then
-  useLayoutEffect(() => {
-    if (teamMembers.length === 0) return;
-
-    const ctx = gsap.context(() => {
-      gsap.set('.team-card', { y: 60, opacity: 0, scale: 0.9 });
-
-      gsap.utils.toArray<HTMLElement>('.team-section').forEach((section) => {
-        const cards = section.querySelectorAll('.team-card');
-        if (cards.length === 0) return;
-        gsap.to(cards, {
-          y: 0, opacity: 1, scale: 1,
-          duration: 0.55, stagger: 0.05, ease: 'power3.out',
-          scrollTrigger: { trigger: section, start: 'top 78%', once: true },
-        });
-      });
-    }, rootRef);
-
-    // Layout settles after images load — refresh ScrollTrigger positions so triggers fire at correct scroll points
-    const t1 = setTimeout(() => ScrollTrigger.refresh(), 200);
-    const t2 = setTimeout(() => ScrollTrigger.refresh(), 800);
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      ctx.revert();
-    };
-  }, [teamMembers]);
+    );
+  }
 
   return (
-    <div ref={rootRef} className="team-page">
-      <header className="team-hero container">
-        <h1 className="team-hero__title">Meet the Team</h1>
-        <div className="team-hero__line" style={{
-          width: 72, height: 2, background: '#c8a46e',
-          marginTop: 18, borderRadius: 1, transformOrigin: 'left center',
-        }} />
-      </header>
+    <div className="nk-pcard" style={{ position: 'relative' }}>
+      {editable && <PencilOverlay id={member.id} />}
+      {img ? (
+        <img className="nk-photo" src={img} alt={member.name} style={layout.size === 'large' ? { aspectRatio: '4/5' } : undefined} />
+      ) : (
+        <div className="nk-noimg" style={layout.size === 'large' ? { aspectRatio: '4/5' } : undefined}>{initialsOf(member.name)}</div>
+      )}
+      <div className="nk-body">
+        <div className="nk-name">{member.name}</div>
+        {member.role && <div className="nk-sec">{member.role}</div>}
+        {member.school && <div className="nk-school">{member.school}</div>}
+        {member.bio ? (
+          <div className="nk-bio">{member.bio}</div>
+        ) : (
+          <div className="nk-bio empty">bio to come — space reserved</div>
+        )}
+      </div>
+    </div>
+  );
+};
 
-      <TeamSection
-        title="Founders"
-        description="The students who started OneKey"
-        members={getTeamMembersBySection('founders')}
-        currentSection="founders"
-      />
+const SectionHead: React.FC<{ numeral: string; title: string; subtitle?: string }> = ({ numeral, title, subtitle }) => (
+  <div
+    className="flex items-baseline gap-3 md:gap-[18px]"
+    style={{ borderBottom: '1px solid var(--nk-line-20)', paddingBottom: 14, marginBottom: 26 }}
+  >
+    <span style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 30, color: 'var(--nk-accent)' }}>{numeral}.</span>
+    <h2 className="text-[24px] md:text-[34px]" style={{ fontWeight: 700 }}>{title}</h2>
+    {subtitle && (
+      <span className="hidden md:inline" style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 16, color: 'var(--nk-ink-78)' }}>
+        {subtitle}
+      </span>
+    )}
+  </div>
+);
 
-      <SplitSection
-        title="Leadership"
-        description="Leaders driving our vision"
-        leftMembers={getTeamMembersBySectionAndGroup('leadership', 'onekey')}
-        rightMembers={getTeamMembersBySectionAndGroup('leadership', 'vanstring')}
-        leftLabel="OneKey"
-        rightLabel="Vanstring"
-        leftGroup="onekey"
-        rightGroup="vanstring"
-        currentSection="leadership"
-        fitCards
-      />
+const Carousel: React.FC<{ vars: React.CSSProperties; children: React.ReactNode }> = ({ vars, children }) => {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const nudge = (dir: number) => {
+    const row = rowRef.current;
+    if (!row) return;
+    const card = row.firstElementChild as HTMLElement | null;
+    row.scrollBy({ left: dir * ((card?.offsetWidth ?? 300) + 16), behavior: 'smooth' });
+  };
+  return (
+    <div style={{ position: 'relative' }}>
+      <div ref={rowRef} className="nk-teamrow" style={vars}>{children}</div>
+      {[-1, 1].map(dir => (
+        <button
+          key={dir}
+          aria-label={dir < 0 ? 'Previous members' : 'More members'}
+          onClick={() => nudge(dir)}
+          className="hidden md:grid"
+          style={{
+            position: 'absolute', top: '50%', transform: 'translateY(-50%)',
+            [dir < 0 ? 'left' : 'right']: -14, width: 34, height: 34, placeItems: 'center',
+            borderRadius: 999, border: '1px solid var(--nk-line-20)', background: '#ffffff',
+            color: 'var(--nk-ink-72)', cursor: 'pointer', boxShadow: '0 6px 18px rgba(59,52,95,0.14)', zIndex: 4,
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            {dir < 0 ? <path d="m15 18-6-6 6-6" /> : <path d="m9 18 6-6-6-6" />}
+          </svg>
+        </button>
+      ))}
+    </div>
+  );
+};
 
-      <SplitSection
-        title="Communications"
-        description="Managing outreach and community connections"
-        leftMembers={getTeamMembersBySectionAndGroup('communications', 'onekey')}
-        rightMembers={getTeamMembersBySectionAndGroup('communications', 'vanstring')}
-        leftLabel="OneKey"
-        rightLabel="Vanstring"
-        leftGroup="onekey"
-        rightGroup="vanstring"
-        currentSection="communications"
-        fitCards
-      />
+const MeetOurTeam: React.FC = () => {
+  const rootRef = useRef<HTMLDivElement>(null);
+  useNkPageMotion(rootRef);
+  const navigate = useNavigate();
 
-      <TeamSection
-        title="Homework Help Coordinators"
-        description="Supporting students through tutoring and academic assistance"
-        members={getTeamMembersBySection('coordinators')}
-        currentSection="coordinators"
-      />
+  const { teamMembers, fetchTeamMembers, isLoading } = useTeamStore();
+  const { isAuthenticated, user, hasPermission } = useAuthStore();
+  const [layout, setLayout] = useState<TeamLayout>(DEFAULT_TEAM_LAYOUT);
+  const [alumniOpen, setAlumniOpen] = useState(false);
 
-      <TeamSection
-        title="Financial Managers"
-        description="Managing budgets and finances to keep our organization running"
-        members={getTeamMembersBySection('finance')}
-        currentSection="finance"
-      />
+  const canManage = !!(isAuthenticated && user && hasPermission('basic_admin'));
 
-      <TeamSection
-        title="Concertmasters"
-        description="Leading Vanstring's performances"
-        members={getTeamMembersBySection('concertmasters').filter(m => m.concertmasterType === 'concertmaster' || m.concertmasterType === 'principal_second')}
-        currentSection="concertmasters"
-        hideBio
-      />
+  useEffect(() => { fetchTeamMembers(); }, [fetchTeamMembers]);
+  useEffect(() => {
+    let alive = true;
+    apiService.getTeamLayout().then(res => {
+      if (alive && res.success && res.data && res.data.layout) setLayout(normalizeTeamLayout(res.data.layout));
+    });
+    return () => { alive = false; };
+  }, []);
 
-      <TeamSection
-        title="Tech & Design"
-        description="Building the website, designing logos, and creating the tools that keep OneKey running"
-        members={getTeamMembersBySection('techdesign')}
-        currentSection="techdesign"
-      />
+  const bySection = useMemo(() => {
+    const map = new Map<SectionKey, TeamMember[]>();
+    layout.order.forEach(key => {
+      const members = teamMembers.filter(m => m.sections.includes(key));
+      if (members.length > 0) map.set(key, members);
+    });
+    return map;
+  }, [teamMembers, layout.order]);
+
+  const visibleSections = layout.order.filter(key => bySection.has(key) && !layout.hidden.includes(key) && key !== 'alumni');
+  const alumniVisible = !layout.hidden.includes('alumni') && bySection.has('alumni');
+  const alumniMembers = bySection.get('alumni') ?? [];
+  const sectionCount = visibleSections.length + (alumniVisible ? 1 : 0);
+  let numeralIdx = 0;
+
+  const renderSectionBody = (members: TeamMember[], sl: SectionLayout) => {
+    const vars = {
+      ['--cols-d' as string]: sl.perRow.desktop,
+      ['--cols-t' as string]: sl.perRow.tablet,
+      ['--cols-p' as string]: sl.perRow.phone,
+    } as React.CSSProperties;
+    const cards = members.map(m => <MemberCard key={m.id} member={m} layout={sl} editable={canManage} />);
+    return sl.mode === 'carousel' ? <Carousel vars={vars}>{cards}</Carousel> : <div className="nk-teamgrid" style={vars}>{cards}</div>;
+  };
+
+  return (
+    <div ref={rootRef} className="nk-page nk-grain">
+      {/* admin edit bar */}
+      {canManage && (
+        <div
+          style={{
+            display: 'flex', alignItems: 'center', gap: 14, padding: '10px 24px',
+            background: 'rgba(124,92,255,0.07)', borderBottom: '1px solid rgba(124,92,255,0.35)',
+            fontSize: 12, color: 'var(--nk-accent-300)', position: 'relative', zIndex: 5,
+          }}
+        >
+          <span style={{ letterSpacing: '0.1em', textTransform: 'uppercase' }}>Admin</span>
+          <button onClick={() => navigate('/admin?tab=team')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--nk-accent-400)', fontFamily: 'inherit', fontSize: 12, textDecoration: 'underline', textUnderlineOffset: 3 }}>
+            Edit members
+          </button>
+          <button onClick={() => navigate('/admin?tab=team&view=layout')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--nk-accent-400)', fontFamily: 'inherit', fontSize: 12, textDecoration: 'underline', textUnderlineOffset: 3 }}>
+            Edit page layout
+          </button>
+          <span style={{ marginLeft: 'auto', color: 'var(--nk-ink-58)' }}>the pencil on any card opens its editor</span>
+        </div>
+      )}
+
+      {/* masthead */}
+      <div className="px-6 pt-8 md:px-16 md:pt-11">
+        <div className="flex flex-wrap items-baseline gap-4 md:gap-6" style={{ borderBottom: '1px solid var(--nk-line-20)', paddingBottom: 22 }}>
+          <span style={{ fontSize: 12, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--nk-royal)' }}>Meet the team</span>
+          <span className="hidden md:inline" style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 17, color: 'var(--nk-ink-78)' }}>
+            listed by section, the way a programme lists its players
+          </span>
+          <span className="ml-auto" style={{ fontSize: 12, color: 'var(--nk-ink-78)' }}>
+            <b style={{ fontFamily: 'var(--nk-serif)', fontWeight: 500, fontSize: 24, color: 'var(--nk-ink)', fontVariantNumeric: 'tabular-nums' }}>{teamMembers.length}</b>{' '}
+            students ·{' '}
+            <b style={{ fontFamily: 'var(--nk-serif)', fontWeight: 500, fontSize: 24, color: 'var(--nk-ink)', fontVariantNumeric: 'tabular-nums' }}>{sectionCount}</b>{' '}
+            sections
+          </span>
+        </div>
+        {layout.intro && (
+          <p style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 17, color: 'var(--nk-ink-78)', margin: '18px 0 0', maxWidth: '70ch' }}>
+            {layout.intro}
+          </p>
+        )}
+      </div>
+
+      {isLoading && teamMembers.length === 0 && (
+        <div style={{ padding: '64px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 26, height: 26, border: '2px solid var(--nk-line-20)', borderTopColor: 'var(--nk-accent)', borderRadius: '50%', animation: 'ok-spin 0.9s linear infinite' }} />
+          <span style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--nk-ink-58)' }}>Tuning up…</span>
+        </div>
+      )}
+
+      {/* sections */}
+      {visibleSections.map(key => {
+        const members = bySection.get(key) ?? [];
+        const numeral = ROMAN[numeralIdx++] ?? '·';
+        const sl = sectionLayoutOf(layout, key);
+        return (
+          <div key={key} className="nk-fade px-6 pt-10 md:px-16 md:pt-14">
+            <SectionHead numeral={numeral} title={SECTION_LABELS[key]} subtitle={SECTION_SUBTITLES[key]} />
+            {renderSectionBody(members, sl)}
+          </div>
+        );
+      })}
+
+      {/* alumni — collapsed disclosure */}
+      {alumniVisible && (
+        <div className="nk-fade px-6 pt-10 md:px-16 md:pt-14">
+          <SectionHead numeral={ROMAN[numeralIdx++] ?? '·'} title={SECTION_LABELS.alumni} subtitle={SECTION_SUBTITLES.alumni} />
+          <button
+            onClick={() => setAlumniOpen(o => !o)}
+            style={{
+              width: '100%', borderRadius: 16, border: '1px solid var(--nk-line-17)', padding: '20px 26px',
+              display: 'flex', alignItems: 'center', gap: 16, background: 'transparent', cursor: 'pointer',
+              fontFamily: 'inherit', color: 'inherit',
+            }}
+          >
+            <span style={{ fontSize: 12, color: 'rgba(43,39,64,0.68)' }}>
+              {alumniOpen ? 'shown below' : `${alumniMembers.length} alumni · kept in the data, shown on demand`}
+            </span>
+            <svg
+              style={{ marginLeft: 'auto', transform: alumniOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }}
+              width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(43,39,64,0.72)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          {alumniOpen && <div style={{ marginTop: 16 }}>{renderSectionBody(alumniMembers, sectionLayoutOf(layout, 'alumni'))}</div>}
+        </div>
+      )}
+
+      {/* CTA */}
+      <div className="mt-12 px-6 py-12 text-center md:mt-[72px] md:px-16 md:py-[76px]" style={{ borderTop: '1px solid var(--nk-line-20)', position: 'relative', overflow: 'hidden' }}>
+        <div
+          className="hidden md:block"
+          style={{
+            position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)',
+            fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 300, color: 'rgba(124,92,255,0.07)',
+            pointerEvents: 'none', whiteSpace: 'nowrap',
+          }}
+        >
+          no. {teamMembers.length + 1}
+        </div>
+        <div className="nk-fade" style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+          <span style={{ fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--nk-royal)' }}>Performers · Tutors · Friends</span>
+          <div className="text-[30px] md:text-[58px]" style={{ fontFamily: 'var(--nk-serif)', fontWeight: 500, lineHeight: 1.05, maxWidth: '24ch' }}>
+            The next card on this page <span style={{ fontStyle: 'italic', color: 'var(--nk-royal)' }}>could be yours.</span>
+          </div>
+          {layout.ctaLink.startsWith('/') ? (
+            <Link
+              to={layout.ctaLink}
+              style={{ fontSize: 13, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nk-accent-400)', border: '1px solid var(--nk-accent)', padding: '16px 38px', borderRadius: 999, marginTop: 8 }}
+            >
+              {layout.ctaText}
+            </Link>
+          ) : (
+            <a
+              href={layout.ctaLink}
+              style={{ fontSize: 13, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nk-accent-400)', border: '1px solid var(--nk-accent)', padding: '16px 38px', borderRadius: 999, marginTop: 8 }}
+            >
+              {layout.ctaText}
+            </a>
+          )}
+          <div style={{ fontSize: 13, color: 'var(--nk-ink-72)' }}>on3keymusic@gmail.com · @on3keymusic</div>
+        </div>
+      </div>
     </div>
   );
 };

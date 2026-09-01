@@ -8,6 +8,7 @@ import { userRoutes } from './routes/users'
 import { logRoutes } from './routes/logs'
 import { fileRoutes } from './routes/files'
 import { uploadRoutes } from './routes/uploads'
+import { layoutRoutes } from './routes/layout'
 
 export type Bindings = {
   DB: D1Database
@@ -33,5 +34,6 @@ app.route('/', userRoutes)
 app.route('/', logRoutes)
 app.route('/', fileRoutes)
 app.route('/', uploadRoutes)
+app.route('/', layoutRoutes)
 
 export default app

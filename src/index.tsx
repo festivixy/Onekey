@@ -10,6 +10,8 @@ import './styles/navigation-fixes.css';
 import './styles/enhanced-design.css';
 // Import Tailwind last so existing styles take precedence
 import './styles/tailwind.css';
+// Nocturne redesign tokens + components — must win the cascade
+import './styles/nocturne.css';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

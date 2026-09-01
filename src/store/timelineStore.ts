@@ -6,9 +6,11 @@ export interface TimelineEvent {
   id: string;
   name: string;
   date: string;
-  category: 'performances' | 'homework' | 'charity';
+  category: 'performances' | 'homework' | 'charity' | 'recognition';
   location?: string;
   time?: string;
+  /** Optional display override when the exact date is unknown (e.g. "2020") */
+  dateLabel?: string;
   attendees?: string;
   performers?: string;
   duration?: string;

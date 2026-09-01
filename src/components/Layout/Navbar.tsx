@@ -1,496 +1,262 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
-// ── Logo assembly animation ──────────────────────────────────────────────────
-const LOGO_CHARS = [
-  { ch: 'O', accent: false },
-  { ch: 'n', accent: false },
-  { ch: 'e', accent: false },
-  { ch: 'K', accent: true  },
-  { ch: 'e', accent: true  },
-  { ch: 'y', accent: true  },
+const JOIN_MAILTO = 'mailto:on3keymusic@gmail.com?subject=Joining%20OneKey';
+
+const linkStyle: React.CSSProperties = {
+  fontSize: 13,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  color: 'rgba(43,39,64,0.9)',
+  paddingBottom: 3,
+  borderBottom: '1px solid transparent',
+};
+
+const activeLinkStyle: React.CSSProperties = {
+  ...linkStyle,
+  color: 'var(--nk-accent-400)',
+  borderBottom: '1px solid var(--nk-accent)',
+};
+
+interface DropItem {
+  label: string;
+  to: string;
+}
+
+const ABOUT_ITEMS: DropItem[] = [
+  { label: 'About OneKey', to: '/about' },
+  { label: 'Vanstring', to: '/vanstring' },
+  { label: 'Highlights', to: '/highlights' },
 ];
 
-function seededRand(seed: number) {
-  const x = Math.sin(seed + 1) * 10000;
-  return x - Math.floor(x);
-}
+const FUNDRAISER_ITEMS: DropItem[] = [
+  { label: 'Richmond Hospital Foundation', to: '/fundraisers' },
+  { label: 'Vancouver Aquarium Donation Concert', to: '/fundraisers/vancouver-aquarium' },
+  { label: 'Voluntary Teaching for China', to: '/vtc' },
+];
 
-// ── Wiggly staff ─────────────────────────────────────────────────────────────
-const STAFF_Y = [3, 7.5, 12, 16.5, 21];
-const WAVE_PERIOD = 28;
-const WAVE_AMP = 1.4;
-
-function wavePath(y: number): string {
-  const c = WAVE_PERIOD / 6;
-  let d = `M${-WAVE_PERIOD * 2},${y}`;
-  for (let x = -WAVE_PERIOD * 2; x < 420; x += WAVE_PERIOD) {
-    d += ` C${x + c},${y - WAVE_AMP} ${x + WAVE_PERIOD / 2 - c},${y - WAVE_AMP} ${x + WAVE_PERIOD / 2},${y}`;
-    d += ` C${x + WAVE_PERIOD / 2 + c},${y + WAVE_AMP} ${x + WAVE_PERIOD - c},${y + WAVE_AMP} ${x + WAVE_PERIOD},${y}`;
-  }
-  return d;
-}
-
-const WigglyStaff: React.FC = () => (
-  <svg
-    style={{
-      position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
-      width: '100%', height: 26, overflow: 'hidden', pointerEvents: 'none',
-    }}
+const Brand: React.FC<{ size?: number }> = ({ size = 22 }) => (
+  <Link
+    to="/"
+    style={{ fontFamily: 'var(--nk-serif)', fontSize: size, fontWeight: 500, color: 'var(--nk-ink)', marginRight: 'auto' }}
   >
-    <motion.g
-      animate={{ x: [0, -WAVE_PERIOD] }}
-      transition={{ duration: 2.4, repeat: Infinity, ease: 'linear' }}
-    >
-      {STAFF_Y.map((y, i) => (
-        <path key={i} d={wavePath(y)} stroke="rgba(200,164,110,0.22)" strokeWidth="0.65" fill="none" />
-      ))}
-    </motion.g>
-  </svg>
+    One<span style={{ fontStyle: 'italic', color: 'var(--nk-royal)' }}>Key</span>
+  </Link>
 );
 
-export const LogoMark: React.FC = () => {
-  const offsets = useMemo(() => LOGO_CHARS.map((_, i) => ({
-    x: (seededRand(i * 3)     - 0.5) * 80,
-    y: (seededRand(i * 3 + 1) - 0.5) * 60,
-    r: (seededRand(i * 3 + 2) - 0.5) * 70,
-  })), []);
-
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 0, position: 'relative' }}>
-      {/* Treble clef */}
-      <motion.svg
-        width="11" height="19" viewBox="0 0 13 22" fill="none"
-        style={{ flexShrink: 0, marginRight: 5 }}
-        initial={{ opacity: 0, x: -30, y: -20, rotate: -40 }}
-        animate={{ opacity: 0.55, x: 0, y: 0, rotate: 0 }}
-        transition={{ type: 'spring', stiffness: 180, damping: 18, delay: 0.05 }}
-      >
-        <path
-          d="M6.5 1C6.5 1 3 4 3 7.5C3 10 4.5 11.5 6.5 12C6.5 12 9 12.5 9 15C9 17.5 7 19 5 19C3 19 1.5 17.5 1.5 15.5C1.5 13.5 3 12.5 4.5 12.5M6.5 1C6.5 1 10 4 10 7.5C10 10 8.5 11.5 6.5 12M6.5 1V19M6.5 19V21"
-          stroke="#c8a46e" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"
-        />
-      </motion.svg>
-
-      {/* Text with wiggly staff running through it */}
-      <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'baseline' }}>
-        <WigglyStaff />
-        {LOGO_CHARS.map(({ ch, accent }, i) => (
-          <motion.span
-            key={i}
-            style={{ color: accent ? '#c8a46e' : '#fafaf9', display: 'inline-block', position: 'relative', zIndex: 1 }}
-            initial={{ x: offsets[i].x, y: offsets[i].y, rotate: offsets[i].r, opacity: 0 }}
-            animate={{ x: 0, y: 0, rotate: 0, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 220, damping: 22, delay: 0.08 + i * 0.045 }}
-          >
-            {ch}
-          </motion.span>
-        ))}
-      </span>
-
-      <motion.span
-        aria-hidden
-        style={{ position: 'absolute', top: -11, right: -12, fontSize: 13, color: '#d6a94a', pointerEvents: 'none', userSelect: 'none', textShadow: '0 0 8px rgba(214,169,74,0.35)' }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 0.8, 0.62], y: [0, -3, 0] }}
-        transition={{ opacity: { delay: 0.55, duration: 0.4 }, y: { delay: 0.55, duration: 2.8, repeat: Infinity, ease: 'easeInOut' } }}
-      >♪</motion.span>
-      <motion.span
-        aria-hidden
-        style={{ position: 'absolute', top: -4, right: -25, fontSize: 10, color: '#d6a94a', pointerEvents: 'none', userSelect: 'none', textShadow: '0 0 7px rgba(214,169,74,0.3)' }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0, 0.65, 0.48], y: [0, -4, 0] }}
-        transition={{ opacity: { delay: 0.7, duration: 0.4 }, y: { delay: 0.7, duration: 3.4, repeat: Infinity, ease: 'easeInOut' } }}
-      >♫</motion.span>
-    </span>
-  );
-};
-
-interface LogoGlowProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-export const LogoGlow: React.FC<LogoGlowProps> = ({ children, className = '' }) => {
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    event.currentTarget.style.setProperty('--logo-glow-x', `${event.clientX - bounds.left}px`);
-    event.currentTarget.style.setProperty('--logo-glow-y', `${event.clientY - bounds.top}px`);
-  };
-
-  return (
-    <div
-      className={`logo-glow ${className}`.trim()}
-      onPointerMove={handlePointerMove}
-      onPointerEnter={handlePointerMove}
-    >
-      {children}
-    </div>
-  );
-};
-
-const ABOUT_ITEMS = [
-  { name: 'OneKey',    path: '/about' },
-  { name: 'Vanstring', path: '/vanstring' },
-];
-
-const FUNDRAISER_ITEMS = [
-  { name: 'Richmond Hospital Foundation', path: '/fundraisers' },
-  { name: 'Vancouver Aquarium Donation Concert', path: '/fundraisers/vancouver-aquarium' },
-  { name: 'Voluntary Teaching for China', path: '/vtc' },
-];
-
-const dropdownVariants = {
-  hidden: { opacity: 0, y: -4, scale: 0.98 },
-  visible: {
-    opacity: 1, y: 0, scale: 1,
-    transition: { duration: 0.1, ease: 'easeOut' as const },
-  },
-  exit: {
-    opacity: 0, y: -3, scale: 0.98,
-    transition: { duration: 0.06, ease: 'easeIn' as const },
-  },
-};
-
-const Navbar = () => {
-  const [isOpen, setIsOpen]               = useState(false);
-  const [isScrolled, setIsScrolled]       = useState(false);
-  const [aboutOpen, setAboutOpen]         = useState(false);
-  const [mobileAbout, setMobileAbout]     = useState(false);
-  const [fundraiserOpen, setFundraiserOpen]       = useState(false);
-  const [mobileFundraiser, setMobileFundraiser]   = useState(false);
-  const aboutRef      = useRef<HTMLDivElement>(null);
-  const fundraiserRef = useRef<HTMLDivElement>(null);
-  const location = useLocation();
-  const isHome = location.pathname === '/';
-
-  useEffect(() => { setIsOpen(false); setAboutOpen(false); setMobileAbout(false); setFundraiserOpen(false); setMobileFundraiser(false); }, [location]);
+const Navbar: React.FC = () => {
+  const { pathname } = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [openDd, setOpenDd] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 16);
-    handleScroll();
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    setMenuOpen(false);
+    setOpenDd(null);
+  }, [pathname]);
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (aboutRef.current && !aboutRef.current.contains(e.target as Node)) setAboutOpen(false);
-      if (fundraiserRef.current && !fundraiserRef.current.contains(e.target as Node)) setFundraiserOpen(false);
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  }, [menuOpen]);
 
-  const flatLinks = [
-    { name: 'Timeline', path: '/timeline' },
-    { name: 'Team',     path: '/team' },
-  ];
+  // close an open dropdown on outside click or Escape
+  useEffect(() => {
+    if (!openDd) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!(e.target as Element | null)?.closest?.('.nk-dd')) setOpenDd(null);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenDd(null);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [openDd]);
 
-  const isAboutActive      = ABOUT_ITEMS.some(i => i.path === location.pathname);
-  const isFundraiserActive = FUNDRAISER_ITEMS.some(i => i.path === location.pathname);
+  const isAboutActive = ['/about', '/vanstring', '/highlights'].includes(pathname);
+  const isFundActive = pathname.startsWith('/fundraisers') || pathname === '/vtc';
 
-  const openAboutMenu = () => {
-    setFundraiserOpen(false);
-    setAboutOpen(true);
+  const dropdown = (key: string, label: string, items: DropItem[], active: boolean) => {
+    const isOpen = openDd === key;
+    return (
+      <div
+        className={`nk-dd ${isOpen ? 'open' : ''}`}
+        style={{ display: 'flex', alignItems: 'center' }}
+        onMouseEnter={() => setOpenDd(key)}
+        onMouseLeave={() => setOpenDd(o => (o === key ? null : o))}
+      >
+        <button
+          aria-haspopup="menu"
+          aria-expanded={isOpen}
+          onClick={() => setOpenDd(o => (o === key ? null : key))}
+          style={{
+            ...(active ? activeLinkStyle : linkStyle),
+            background: 'none',
+            border: 'none',
+            borderBottom: (active ? activeLinkStyle : linkStyle).borderBottom,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: 0,
+            paddingBottom: 3,
+          }}
+        >
+          {label}
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }}
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+        <div className="nk-dd-panel">
+          {items.map(it => (
+            <Link key={it.to} to={it.to}>
+              {it.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
   };
-
-  const openFundraiserMenu = () => {
-    setAboutOpen(false);
-    setFundraiserOpen(true);
-  };
-
-  const navShellClass = [
-    'site-nav',
-    isScrolled ? 'site-nav--scrolled' : '',
-    !isHome ? 'site-nav--solid' : '',
-  ].filter(Boolean).join(' ');
 
   return (
-    <nav className={navShellClass}>
-      <motion.div
-        className="site-nav__inner"
-        initial={false}
-        animate={{ paddingTop: isScrolled ? 12 : 16, paddingBottom: isScrolled ? 12 : 16 }}
-        transition={{ duration: 0.25 }}
+    <nav style={{ position: 'sticky', top: 0, zIndex: 80, background: '#ffffff', fontFamily: 'var(--nk-body)' }}>
+      {/* desktop */}
+      <div
+        className="hidden md:flex"
+        style={{ alignItems: 'center', gap: 34, padding: '26px 64px', borderBottom: '1px solid var(--nk-line-20)' }}
       >
-        <motion.div
-          initial={isHome ? { opacity: 0, y: -4 } : false}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, ease: 'easeOut' }}
+        <Brand />
+        <Link to="/" style={pathname === '/' ? activeLinkStyle : linkStyle}>
+          Home
+        </Link>
+        {dropdown('about', 'About', ABOUT_ITEMS, isAboutActive)}
+        {dropdown('fund', 'Fundraisers', FUNDRAISER_ITEMS, isFundActive)}
+        <Link to="/timeline" style={pathname === '/timeline' ? activeLinkStyle : linkStyle}>
+          Timeline
+        </Link>
+        <Link to="/team" style={pathname === '/team' ? activeLinkStyle : linkStyle}>
+          Team
+        </Link>
+        <a
+          href={JOIN_MAILTO}
+          style={{
+            fontSize: 13,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--nk-accent-400)',
+            border: '1px solid var(--nk-accent)',
+            padding: '9px 20px',
+            borderRadius: 999,
+          }}
         >
-          <Link to="/" className="site-nav__logo" style={{ position: 'relative' }}>
-            <LogoGlow>
-              <LogoMark />
-            </LogoGlow>
-          </Link>
-        </motion.div>
+          Join us
+        </a>
+      </div>
 
-        {/* Desktop links */}
-        <motion.div
-          className="site-nav__desktop"
-          initial={false}
-          animate={{ opacity: isOpen ? 0.4 : 1 }}
-          transition={{ duration: 0.2 }}
-        >
-          {/* Home */}
-          <Link to="/" className={`site-nav__link ${location.pathname === '/' ? 'site-nav__link--active' : ''}`}>
-            Home
-          </Link>
-
-          {/* About dropdown */}
-          <div
-            ref={aboutRef}
-            className="relative w-fit"
-            onMouseEnter={openAboutMenu}
-            onMouseLeave={() => setAboutOpen(false)}
-          >
-            <button
-              className={`site-nav__link flex items-center gap-1 border-0 cursor-pointer ${isAboutActive ? 'site-nav__link--active' : ''}`}
-              onClick={() => setAboutOpen(o => !o)}
-              aria-expanded={aboutOpen}
-            >
-              About
-              <motion.span
-                animate={{ rotate: aboutOpen ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-                style={{ display: 'flex' }}
-              >
-                <ChevronDown size={13} strokeWidth={2.5} />
-              </motion.span>
-            </button>
-
-            <AnimatePresence>
-              {aboutOpen && (
-                <motion.div
-                  className="nav-dropdown"
-                  variants={dropdownVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                >
-                  {ABOUT_ITEMS.map((item, i) => (
-                    <motion.div
-                      key={item.path}
-                      initial={{ opacity: 0, x: -6 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.025, duration: 0.1, ease: 'easeOut' }}
-                    >
-                      <Link
-                        to={item.path}
-                        className={`nav-dropdown__item ${location.pathname === item.path ? 'nav-dropdown__item--active' : ''}`}
-                      >
-                        {item.name}
-                      </Link>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Fundraisers dropdown */}
-          <div
-            ref={fundraiserRef}
-            className="relative w-fit"
-            onMouseEnter={openFundraiserMenu}
-            onMouseLeave={() => setFundraiserOpen(false)}
-          >
-            <button
-              className={`site-nav__link flex items-center gap-1 border-0 cursor-pointer ${isFundraiserActive ? 'site-nav__link--active' : ''}`}
-              onClick={() => setFundraiserOpen(o => !o)}
-              aria-expanded={fundraiserOpen}
-            >
-              Fundraisers
-              <motion.span
-                animate={{ rotate: fundraiserOpen ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-                style={{ display: 'flex' }}
-              >
-                <ChevronDown size={13} strokeWidth={2.5} />
-              </motion.span>
-            </button>
-
-            <AnimatePresence>
-              {fundraiserOpen && (
-                <motion.div
-                  className="nav-dropdown"
-                  variants={dropdownVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                >
-                  {FUNDRAISER_ITEMS.map((item, i) => (
-                    <motion.div
-                      key={item.path}
-                      initial={{ opacity: 0, x: -6 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.025, duration: 0.1, ease: 'easeOut' }}
-                    >
-                      <Link
-                        to={item.path}
-                        className={`nav-dropdown__item ${location.pathname === item.path ? 'nav-dropdown__item--active' : ''}`}
-                      >
-                        {item.name}
-                      </Link>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Flat links */}
-          {flatLinks.map((link) => {
-            const isActive = location.pathname === link.path;
-            return (
-              <Link
-                key={link.name}
-                to={link.path}
-                className={`site-nav__link ${isActive ? 'site-nav__link--active' : ''}`}
-              >
-                {link.name}
-              </Link>
-            );
-          })}
-        </motion.div>
-
+      {/* phone bar */}
+      <div
+        className="flex md:hidden"
+        style={{ alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid var(--nk-line-20)' }}
+      >
+        <Brand size={20} />
         <button
-          type="button"
-          className="site-nav__toggle md:hidden"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-expanded={isOpen}
-          aria-label={isOpen ? 'Close menu' : 'Open menu'}
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          onClick={() => setMenuOpen(o => !o)}
+          style={{ background: 'none', border: 'none', padding: 6, cursor: 'pointer' }}
         >
-          {isOpen ? <X size={22} strokeWidth={2.25} /> : <Menu size={22} strokeWidth={2.25} />}
+          {menuOpen ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2b2740" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M5 5l14 14" />
+              <path d="M19 5L5 19" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2b2740" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M4 7h16" />
+              <path d="M4 12h16" />
+              <path d="M4 17h16" />
+            </svg>
+          )}
         </button>
-      </motion.div>
+      </div>
 
-      {/* Mobile menu */}
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            <motion.button
-              type="button"
-              className="site-nav__backdrop md:hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              aria-label="Close menu"
-              onClick={() => setIsOpen(false)}
-            />
-            <motion.div
-              className="site-nav__mobile md:hidden"
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
+      {/* phone full-screen menu */}
+      {menuOpen && (
+        <div
+          className="md:hidden nk-grain"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            top: 57,
+            background: '#ffffff',
+            zIndex: 79,
+            padding: '36px 28px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 22,
+            overflowY: 'auto',
+            fontFamily: 'var(--nk-body)',
+          }}
+        >
+          {[
+            { label: 'Home', to: '/' },
+            { label: 'About', to: '/about' },
+            { label: 'Vanstring', to: '/vanstring' },
+            { label: 'Highlights', to: '/highlights' },
+            { label: 'Fundraisers', to: '/fundraisers' },
+            { label: 'Vancouver Aquarium', to: '/fundraisers/vancouver-aquarium' },
+            { label: 'Voluntary Teaching for China', to: '/vtc' },
+            { label: 'Timeline', to: '/timeline' },
+            { label: 'Team', to: '/team' },
+          ].map(it => (
+            <Link
+              key={it.to}
+              to={it.to}
+              style={{
+                fontFamily: 'var(--nk-serif)',
+                fontSize: 30,
+                fontWeight: 500,
+                color: pathname === it.to ? 'var(--nk-accent-400)' : 'var(--nk-ink)',
+                borderBottom: '1px solid var(--nk-line-17)',
+                paddingBottom: 14,
+              }}
             >
-              {/* Home */}
-              <Link
-                to="/"
-                className={`site-nav__mobile-link ${location.pathname === '/' ? 'site-nav__mobile-link--active' : ''}`}
-                onClick={() => setIsOpen(false)}
-              >
-                Home
-              </Link>
-
-              {/* About accordion */}
-              <button
-                className={`site-nav__mobile-link w-full text-left flex items-center justify-between bg-transparent border-0 cursor-pointer ${isAboutActive ? 'site-nav__mobile-link--active' : ''}`}
-                onClick={() => setMobileAbout(o => !o)}
-              >
-                About
-                <motion.span
-                  animate={{ rotate: mobileAbout ? 180 : 0 }}
-                  transition={{ duration: 0.2 }}
-                  style={{ display: 'flex' }}
-                >
-                  <ChevronDown size={14} strokeWidth={2.5} />
-                </motion.span>
-              </button>
-
-              <AnimatePresence>
-                {mobileAbout && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.22, ease: 'easeInOut' }}
-                    className="site-nav__mobile-submenu overflow-hidden"
-                  >
-                    {ABOUT_ITEMS.map((item) => (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        className={`site-nav__mobile-link site-nav__mobile-submenu-link ${location.pathname === item.path ? 'site-nav__mobile-link--active' : ''}`}
-                        onClick={() => setIsOpen(false)}
-                      >
-                        {item.name}
-                      </Link>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Fundraisers accordion */}
-              <button
-                className={`site-nav__mobile-link w-full text-left flex items-center justify-between bg-transparent border-0 cursor-pointer ${isFundraiserActive ? 'site-nav__mobile-link--active' : ''}`}
-                onClick={() => setMobileFundraiser(o => !o)}
-              >
-                Fundraisers
-                <motion.span
-                  animate={{ rotate: mobileFundraiser ? 180 : 0 }}
-                  transition={{ duration: 0.2 }}
-                  style={{ display: 'flex' }}
-                >
-                  <ChevronDown size={14} strokeWidth={2.5} />
-                </motion.span>
-              </button>
-
-              <AnimatePresence>
-                {mobileFundraiser && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.22, ease: 'easeInOut' }}
-                    className="site-nav__mobile-submenu overflow-hidden"
-                  >
-                    {FUNDRAISER_ITEMS.map((item) => (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        className={`site-nav__mobile-link site-nav__mobile-submenu-link ${location.pathname === item.path ? 'site-nav__mobile-link--active' : ''}`}
-                        onClick={() => setIsOpen(false)}
-                      >
-                        {item.name}
-                      </Link>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {flatLinks.map((link) => {
-                const isActive = location.pathname === link.path;
-                return (
-                  <Link
-                    key={link.name}
-                    to={link.path}
-                    className={`site-nav__mobile-link ${isActive ? 'site-nav__mobile-link--active' : ''}`}
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {link.name}
-                  </Link>
-                );
-              })}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              {it.label}
+            </Link>
+          ))}
+          <a
+            href={JOIN_MAILTO}
+            style={{
+              alignSelf: 'flex-start',
+              fontSize: 13,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: 'var(--nk-accent-400)',
+              border: '1px solid var(--nk-accent)',
+              padding: '14px 30px',
+              borderRadius: 999,
+              marginTop: 8,
+            }}
+          >
+            Join us
+          </a>
+        </div>
+      )}
     </nav>
   );
 };

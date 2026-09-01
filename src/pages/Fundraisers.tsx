@@ -1,424 +1,160 @@
-import React, { useEffect, useLayoutEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { usePhotoStore } from '../store/photoStore';
+import React, { useRef } from 'react';
+import { photoUrl as P } from '../utils/photoUrl';
+import { NkHeroSlideshow, NkPhotoSlot, useNkPageMotion } from '../components/nocturne/motion';
 
-gsap.registerPlugin(ScrollTrigger);
 
-const RICHMOND_PHOTO    = `${process.env.PUBLIC_URL}/pics/richmondhospital.jpg`;
-const CHECK_2023_PHOTO  = `${process.env.PUBLIC_URL}/pics/richmond_check_2023.jpg`;
-const PERFORM_PHOTOS    = [
-  { src: `${process.env.PUBLIC_URL}/pics/onekey.jpg`,      alt: 'Vanstring performing at Richmond Hospital' },
-  { src: `${process.env.PUBLIC_URL}/pics/onekey_team.jpg`, alt: 'Vanstring team performing at Richmond Hospital' },
+
+const sectionHead = (title: string, subtitle: string) => (
+  <div
+    className="flex flex-wrap items-baseline gap-3 md:gap-[18px]"
+    style={{ borderBottom: '1px solid var(--nk-line-20)', paddingBottom: 14, marginBottom: 26 }}
+  >
+    <h2 className="text-[24px] md:text-[32px]" style={{ fontWeight: 700 }}>{title}</h2>
+    <span style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 16, color: 'var(--nk-ink-78)' }}>{subtitle}</span>
+  </div>
+);
+
+const CERTIFICATES = [
+  { name: 'Curtis Wei', role: 'OneKey co-founder' },
+  { name: 'Jack Wang', role: 'OneKey co-founder' },
+  { name: 'Alex Zhang', role: 'Vanstring leader' },
 ];
 
-const TOTAL_RAISED  = 52000;  // cumulative across all years — running counter
-const YEARS_ACTIVE  = 10;
+const MOMENTS = [
+  { img: P('/pics/vanstring_member_1.jpg'), alt: 'Quartet performing for seniors in wheelchairs' },
+  { img: P('/pics/vanstring_member_2.jpg'), alt: 'String players in a senior-home lounge' },
+  { img: P('/pics/vanstring_team.jpg'), alt: 'Two cellists mid-performance' },
+  { img: P('/pics/donationbox.JPG'), alt: 'A young performer beside the donation box' },
+];
 
 const Fundraisers: React.FC = () => {
-  const rootRef    = useRef<HTMLDivElement>(null);
-  const counterRef = useRef<HTMLSpanElement>(null);
-  const fetchPhotos = usePhotoStore(s => s.fetchPhotos);
-  const uploadedRH  = usePhotoStore(s => s.photos.filter(p => p.category === 'richmond-hospital'));
-
-  useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
-
-  // Refresh ScrollTrigger after async photos load
-  useEffect(() => {
-    if (uploadedRH.length === 0) return;
-    const t = setTimeout(() => ScrollTrigger.refresh(), 250);
-    return () => clearTimeout(t);
-  }, [uploadedRH.length]);
-
-  useLayoutEffect(() => {
-    if (typeof window !== 'undefined' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return;
-    }
-
-    const ctx = gsap.context(() => {
-
-      /* ── Initial hidden states (set before paint) ─────────────────── */
-      gsap.set('.rh-hero-image',    { scale: 1.04 });
-      gsap.set('.rh-hero-eyebrow',  { clipPath: 'inset(0 100% 0 0)', opacity: 0 });
-      gsap.set('.rh-hero-title',    { y: 40, opacity: 0 });
-      gsap.set('.rh-stat-label',    { y: 30, opacity: 0 });
-      gsap.set('.rh-substat',       { y: 24, opacity: 0 });
-      gsap.set('.reveal-line',      { y: 30, opacity: 0, clipPath: 'inset(0 0 100% 0)' });
-
-      /* ── Hero entrance ──────────────────────────────────────────────── */
-      const intro = gsap.timeline({ defaults: { ease: 'power3.out' } });
-      intro
-        .to('.rh-hero-image', { scale: 1, duration: 1.6, ease: 'power2.out', delay: 0.1 })
-        .to('.rh-hero-eyebrow', { clipPath: 'inset(0 0% 0 0)', opacity: 1, duration: 0.7 }, '-=1.2')
-        .to('.rh-hero-title',   { y: 0, opacity: 1, duration: 0.85 }, '-=0.4');
-
-      /* ── Hero parallax on scroll ────────────────────────────────────── */
-      gsap.to('.rh-hero-image', {
-        yPercent: -6,
-        ease: 'none',
-        scrollTrigger: { trigger: '.rh-hero', start: 'top top', end: 'bottom top', scrub: 0.8 },
-      });
-
-      /* ── Stats — count-up plays once on scroll, stays at max ────────── */
-      ScrollTrigger.create({
-        trigger: '.rh-stats',
-        start: 'top 75%',
-        once: true,
-        onEnter: () => {
-          // Reveal labels and sub-stats
-          gsap.to('.rh-stat-label', {
-            y: 0, opacity: 1, duration: 0.7, stagger: 0.08, ease: 'power3.out',
-          });
-          gsap.to('.rh-substat', {
-            y: 0, opacity: 1, duration: 0.6, stagger: 0.12, ease: 'power3.out', delay: 0.3,
-          });
-
-          // Animate the big number
-          const counter = { val: 0 };
-          gsap.to(counter, {
-            val: TOTAL_RAISED,
-            duration: 2.2,
-            delay: 0.2,
-            ease: 'power2.out',
-            onUpdate: () => {
-              if (counterRef.current) {
-                counterRef.current.textContent = '$' + Math.round(counter.val).toLocaleString();
-              }
-            },
-          });
-        },
-      });
-
-      /* ── About text — line-by-line clip-path reveal ─────────────────── */
-      gsap.utils.toArray<HTMLElement>('.reveal-line').forEach((line) => {
-        gsap.to(line, {
-          y: 0, opacity: 1, clipPath: 'inset(0 0 0% 0)',
-          duration: 0.85, ease: 'power3.out',
-          scrollTrigger: { trigger: line, start: 'top 88%', once: true },
-        });
-      });
-
-    }, rootRef);
-
-    return () => ctx.revert();
-  }, []);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useNkPageMotion(rootRef);
 
   return (
-    <div ref={rootRef} className="relative overflow-hidden bg-stone-900">
-
-      {/* ── Hero ───────────────────────────────────────────────────────── */}
-      <section className="rh-hero hero-section" style={{ background: '#1c1917' }}>
-        <div className="rh-hero-image hero-section__media" style={{ willChange: 'transform' }}>
-          {/* Blurred letterbox fill */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            backgroundImage: `url(${RICHMOND_PHOTO})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: 'blur(24px) brightness(0.35)',
-            transform: 'scale(1.08)',
-          }} />
-          <img
-            src={RICHMOND_PHOTO}
-            alt="Vanstring presenting cheque to Richmond Hospital Foundation"
-            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', position: 'relative', zIndex: 1 }}
-          />
-        </div>
-
-        {/* Bottom gradient */}
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0, height: 200, zIndex: 2,
-          background: 'linear-gradient(to top, rgba(12,10,9,0.85) 0%, transparent 100%)',
-          pointerEvents: 'none',
-        }} />
-
-        {/* Centered title */}
-        <div style={{
-          position: 'absolute', bottom: 56, left: 0, right: 0,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 3,
-        }}>
-          <p className="rh-hero-eyebrow" style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
-            textTransform: 'uppercase', color: '#c8a46e', marginBottom: 8,
-          }}>
-            Fundraiser Partner
-          </p>
-          <h1 className="rh-hero-title" style={{
-            fontSize: 'clamp(1.6rem, 3.5vw, 2.8rem)',
-            fontWeight: 700, color: '#fafaf9',
-            letterSpacing: '-0.02em', textAlign: 'center',
-            textShadow: '0 2px 24px rgba(0,0,0,0.8)', margin: 0,
-            padding: '0 24px',
-          }}>
-            Richmond Hospital Foundation
-          </h1>
-        </div>
-
-        {/* Scroll tug */}
-        <motion.div aria-hidden="true"
+    <div ref={rootRef} className="nk-page nk-grain">
+      {/* masthead: the number first */}
+      <div className="px-6 pt-10 md:px-16 md:pt-16" style={{ position: 'relative' }}>
+        <div
+          className="hidden md:block"
           style={{
-            position: 'absolute', bottom: 18, left: '50%', x: '-50%',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-            pointerEvents: 'none', zIndex: 4,
+            position: 'absolute', right: 56, top: 36, fontFamily: 'var(--nk-serif)', fontStyle: 'italic',
+            fontSize: 230, lineHeight: 1, color: 'rgba(124,92,255,0.08)', pointerEvents: 'none',
           }}
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut', delay: 1.6 }}
         >
-          <div style={{ width: 1.5, height: 24, borderRadius: 2, background: 'rgba(255,255,255,0.4)' }} />
-          <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'rgba(255,255,255,0.4)' }} />
-        </motion.div>
-      </section>
-
-      {/* ── Stats — cumulative total + breakdown ─────────────────────── */}
-      <section className="rh-stats relative" style={{ padding: '120px 24px 40px' }}>
-        <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
-          <p className="rh-stat-label" style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: '0.16em',
-            textTransform: 'uppercase', color: '#c8a46e', marginBottom: 24,
-          }}>
-            Across {YEARS_ACTIVE} years, we've donated
-          </p>
-          <h2 style={{
-            fontSize: 'clamp(3.5rem, 9vw, 6rem)', fontWeight: 700, color: '#fafaf9',
-            letterSpacing: '-0.04em', lineHeight: 1, margin: 0,
-          }}>
-            <span ref={counterRef}>$0</span>
-            <span style={{ color: '#c8a46e' }}>+</span>
-          </h2>
-          <p className="rh-stat-label" style={{ fontSize: '1rem', color: '#78716c', marginTop: 16 }}>
-            to the Richmond Hospital Foundation
-          </p>
-
-          {/* Sub-stat */}
-          <div style={{ marginTop: 48, display: 'flex', justifyContent: 'center' }}>
-            <div className="rh-substat" style={{
-              padding: '20px 32px',
-              borderTop: '1px solid rgba(200,164,110,0.18)',
-              textAlign: 'center',
-            }}>
-              <p style={{
-                fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
-                textTransform: 'uppercase', color: '#c8a46e', marginBottom: 8,
-              }}>
-                Years Partnered
-              </p>
-              <p style={{ fontSize: '1.8rem', fontWeight: 700, color: '#fafaf9', margin: 0, letterSpacing: '-0.02em' }}>
-                {YEARS_ACTIVE}
-              </p>
-            </div>
+          10
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span className="w-7 md:w-11" style={{ height: 1, background: 'var(--nk-blue)', flex: 'none' }} />
+          <span className="text-[10px] md:text-xs" style={{ letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--nk-royal)' }}>
+            Fundraiser partner · Richmond Hospital Foundation · Vanstring's partnership
+          </span>
+        </div>
+        <div className="nk-fade" style={{ marginTop: 40 }}>
+          <div style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 21, color: 'var(--nk-ink-85)' }}>
+            Across ten years, we've donated
+          </div>
+          <div
+            className="text-[64px] md:text-[150px]"
+            style={{ fontFamily: 'var(--nk-serif)', fontWeight: 500, fontVariantNumeric: 'tabular-nums', lineHeight: 1.05 }}
+          >
+            <span className="nk-count" data-target="52000" data-prefix="$" data-suffix="+">
+              $52,000+
+            </span>
+          </div>
+          <div style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 21, color: 'var(--nk-ink-85)' }}>
+            to the Richmond Hospital Foundation — presented in person, cheque by cheque.
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* ── About ───────────────────────────────────────────────────────── */}
-      <section className="relative" style={{ padding: '40px 24px 120px' }}>
-        <div style={{ maxWidth: 680, margin: '0 auto' }}>
-          <p className="reveal-line" style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
-            textTransform: 'uppercase', color: '#c8a46e', marginBottom: 16,
-          }}>
-            About This Partnership
-          </p>
-          <h2 className="reveal-line" style={{
-            fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 700, color: '#fafaf9',
-            letterSpacing: '-0.02em', marginBottom: 28,
-          }}>
-            A decade of giving back
-          </h2>
-          <p className="reveal-line" style={{ fontSize: '1rem', color: '#a8a29e', lineHeight: 1.8, marginBottom: 16 }}>
-            For {YEARS_ACTIVE} years, Vanstring has partnered with the Richmond Hospital Foundation to support patient care and medical services in our community. Each year, our members host charity concerts and performances to raise funds for the Foundation.
-          </p>
-          <p className="reveal-line" style={{ fontSize: '1rem', color: '#a8a29e', lineHeight: 1.8 }}>
-            Every dollar raised goes directly to the Foundation, helping fund equipment, programs, and care that touches thousands of lives in Richmond. It's one of our longest-running commitments, and one we'll continue for as long as our community keeps showing up.
-          </p>
-        </div>
-      </section>
+      {/* hero plate */}
+      <div className="nk-fade mx-6 md:ml-32 md:mr-0">
+        <NkHeroSlideshow
+          slides={[{ src: P('/pics/RHFcheck2025.jpg'), alt: 'Group with the 2025 cheque outside the hospital Main Entrance' }]}
+          height="clamp(280px, 36vw, 520px)"
+          margin="48px 0 0"
+          showDots={false}
+        />
+      </div>
 
-      {/* ── Cheque Presentations gallery ───────────────────────────────── */}
-      <section className="relative" style={{ padding: '40px 24px 120px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <p className="reveal-line" style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
-            textTransform: 'uppercase', color: '#c8a46e', marginBottom: 16,
-          }}>
-            Cheque Presentations
-          </p>
-          <h2 className="reveal-line" style={{
-            fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 700, color: '#fafaf9',
-            letterSpacing: '-0.02em', marginBottom: 12,
-          }}>
-            From the archive
-          </h2>
-          <p className="reveal-line" style={{
-            fontSize: '0.95rem', color: '#78716c', marginBottom: 36, lineHeight: 1.7,
-          }}>
-            A look at select years from our partnership. We don't have photos from every year — but the tradition continues.
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 24 }}>
-
-            {/* 2025 cheque */}
-            <div className="reveal-line" style={{
-              borderRadius: 14, overflow: 'hidden',
-              border: '1px solid rgba(255,255,255,0.08)',
-              background: '#231f1c',
-              boxShadow: '0 12px 48px rgba(0,0,0,0.4)',
-            }}>
-              <div style={{ position: 'relative', width: '100%', overflow: 'hidden', aspectRatio: '4/3', background: '#1a1714' }}>
-                <img
-                  src={RICHMOND_PHOTO}
-                  alt="Vanstring presenting cheque to Richmond Hospital Foundation, 2025"
-                  style={{
-                    width: '100%', height: '100%', objectFit: 'contain', display: 'block',
-                  }}
-                />
-              </div>
-              <div style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '20px 24px', borderTop: '1px solid rgba(255,255,255,0.06)',
-                flexWrap: 'wrap', gap: 12,
-              }}>
-                <div>
-                  <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#78716c', margin: 0 }}>
-                    2025
-                  </p>
-                  <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fafaf9', margin: '4px 0 0', letterSpacing: '-0.02em' }}>
-                    $2,905
-                  </p>
-                </div>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 7,
-                  padding: '4px 12px', borderRadius: 999,
-                  background: 'rgba(200,164,110,0.12)',
-                  border: '1px solid rgba(200,164,110,0.2)',
-                }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#c8a46e' }} />
-                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#c8a46e' }}>
-                    Most Recent
-                  </span>
-                </span>
-              </div>
-            </div>
-
-            {/* 2023 cheque */}
-            <div className="reveal-line" style={{
-              borderRadius: 14, overflow: 'hidden',
-              border: '1px solid rgba(255,255,255,0.08)',
-              background: '#231f1c',
-              boxShadow: '0 12px 48px rgba(0,0,0,0.4)',
-            }}>
-              <div style={{ position: 'relative', width: '100%', overflow: 'hidden', aspectRatio: '4/3', background: '#1a1714' }}>
-                <img
-                  src={CHECK_2023_PHOTO}
-                  alt="Vanstring members presenting a cheque to Richmond Hospital Foundation in December 2023"
-                  style={{
-                    width: '100%', height: '100%', objectFit: 'cover',
-                    objectPosition: 'center top',
-                    display: 'block',
-                    clipPath: 'inset(0 0 13% 0)',
-                    transform: 'scale(1.15)',
-                    transformOrigin: 'center top',
-                  }}
-                />
-              </div>
-              <div style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '20px 24px', borderTop: '1px solid rgba(255,255,255,0.06)',
-                flexWrap: 'wrap', gap: 12,
-              }}>
-                <div>
-                  <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#78716c', margin: 0 }}>
-                    December 2023
-                  </p>
-                  <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fafaf9', margin: '4px 0 0', letterSpacing: '-0.02em' }}>
-                    $3,996.30
-                  </p>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#78716c', margin: 0 }}>
-                    Memo
-                  </p>
-                  <p style={{ fontSize: '0.9rem', color: '#a8a29e', margin: '4px 0 0', fontStyle: 'italic' }}>
-                    Gift of Health
-                  </p>
-                </div>
-              </div>
-            </div>
-
+      {/* about */}
+      <div
+        className="nk-fade mx-6 mt-12 grid grid-cols-1 gap-6 md:mx-16 md:mt-20 md:grid-cols-[380px_1fr] md:gap-16"
+        style={{ borderTop: '1px solid var(--nk-line-20)', paddingTop: 44 }}
+      >
+        <div>
+          <span style={{ fontSize: 12, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--nk-royal)' }}>About this partnership</span>
+          <div className="text-[30px] md:text-[42px]" style={{ fontFamily: 'var(--nk-serif)', fontWeight: 500, lineHeight: 1.1, marginTop: 14 }}>
+            A decade of <span style={{ fontStyle: 'italic', color: 'var(--nk-royal)' }}>giving back.</span>
           </div>
         </div>
-      </section>
-
-      {/* ── Performance Moments at Richmond Hospital ───────────────────── */}
-      <section className="relative" style={{ padding: '0 24px 120px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <p className="reveal-line" style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: '0.14em',
-            textTransform: 'uppercase', color: '#c8a46e', marginBottom: 16,
-          }}>
-            Performance Moments
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-9">
+          <p style={{ fontSize: 14, lineHeight: 1.85, margin: 0, color: 'var(--nk-ink-90)', textAlign: 'justify' }}>
+            This is Vanstring's longest-running fundraising partnership — about ten years of concerts whose proceeds go to the Richmond
+            Hospital Foundation, presented in person at the hospital each season.
           </p>
-          <h2 className="reveal-line" style={{
-            fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', fontWeight: 700, color: '#fafaf9',
-            letterSpacing: '-0.02em', marginBottom: 28,
-          }}>
-            On the ground at Richmond Hospital
-          </h2>
+          <p style={{ fontSize: 14, lineHeight: 1.85, margin: 0, color: 'var(--nk-ink-90)', textAlign: 'justify' }}>
+            The cheques are signed from the Cecilia &amp; Kevin Music School, where the ensembles rehearse; in December 2023 the Foundation
+            returned the gesture with Certificates of Appreciation for the fundraiser's leads.
+          </p>
+        </div>
+      </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 24 }}>
-            {PERFORM_PHOTOS.map((p) => (
-              <div
-                key={p.src}
-                className="reveal-line"
-                style={{
-                  borderRadius: 14, overflow: 'hidden',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: '#231f1c',
-                  boxShadow: '0 12px 48px rgba(0,0,0,0.4)',
-                  aspectRatio: '4/3',
-                }}
-              >
-                <img
-                  src={p.src}
-                  alt={p.alt}
-                  style={{
-                    width: '100%', height: '100%',
-                    objectFit: 'cover', objectPosition: 'center',
-                    display: 'block',
-                  }}
-                />
-              </div>
-            ))}
-            {uploadedRH.map((photo) => (
-              <div
-                key={photo.id}
-                className="reveal-line"
-                style={{
-                  borderRadius: 14, overflow: 'hidden',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: '#231f1c',
-                  boxShadow: '0 12px 48px rgba(0,0,0,0.4)',
-                  aspectRatio: '4/3',
-                }}
-              >
-                <img
-                  src={photo.url}
-                  alt={photo.filename}
-                  loading="lazy"
-                  style={{
-                    width: '100%', height: '100%',
-                    objectFit: 'cover', objectPosition: 'center',
-                    display: 'block',
-                  }}
-                />
-              </div>
-            ))}
+      {/* cheque cards */}
+      <div className="nk-fade px-6 pt-12 md:px-16 md:pt-[72px]">
+        {sectionHead('Cheque presentations', 'from the archive — more years to come')}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div style={{ borderRadius: 16, border: '1px solid rgba(124,92,255,0.4)', background: 'var(--nk-panel)', padding: 22, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <img className="nk-plate" src={P('/pics/RHFcheck2025.jpg')} alt="2025 cheque presentation outside the Main Entrance" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
+              <span style={{ fontFamily: 'var(--nk-serif)', fontSize: 40, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>$2,905</span>
+              <span style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums', color: 'var(--nk-ink-85)' }}>2025</span>
+              <span style={{ marginLeft: 'auto', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--nk-accent-300)', border: '1px solid rgba(124,92,255,0.5)', padding: '4px 12px', borderRadius: 999 }}>
+                Most recent
+              </span>
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--nk-ink-78)', lineHeight: 1.6 }}>Presented outside the Main Entrance, Milan Ilich Pavilion.</div>
+          </div>
+          <div style={{ borderRadius: 16, border: '1px solid var(--nk-line-17)', background: 'var(--nk-panel)', padding: 22, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <img className="nk-plate" src={P('/pics/RHFcheck.JPG')} alt="December 2023 cheque presentation at the Richmond Hospital Foundation wall" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
+              <span style={{ fontFamily: 'var(--nk-serif)', fontSize: 40, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>$3,996.30</span>
+              <span style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums', color: 'var(--nk-ink-85)' }}>Dec 27, 2023</span>
+              <span style={{ marginLeft: 'auto', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--nk-accent-400)', border: '1px solid rgba(124,92,255,0.4)', padding: '4px 12px', borderRadius: 999 }}>
+                "Gift of Health"
+              </span>
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--nk-ink-78)', lineHeight: 1.6 }}>From "Cecilia &amp; Kevin Music School."</div>
           </div>
         </div>
-      </section>
+      </div>
 
+      {/* certificates */}
+      <div className="nk-fade px-6 pt-12 md:px-16 md:pt-[72px]">
+        {sectionHead('Certificates of Appreciation', 'December 2023')}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+          {CERTIFICATES.map(c => (
+            <figure key={c.name} style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <NkPhotoSlot ratio="3/4" />
+              <figcaption style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: 'var(--nk-serif)', fontSize: 21, fontWeight: 700 }}>{c.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--nk-ink-78)' }}>{c.role}</div>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+
+      {/* performance moments */}
+      <div className="nk-fade px-6 pb-16 pt-12 md:px-16 md:pb-[88px] md:pt-[72px]">
+        {sectionHead('Performance moments', 'on the ground at Richmond Hospital')}
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {MOMENTS.map(m => (
+            <img key={m.img} className="nk-plate" src={m.img} alt={m.alt} loading="lazy" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover' }} />
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

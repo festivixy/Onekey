@@ -23343,3 +23343,12 @@ tr:hover {
   position: relative;
   z-index: 2;
 }
+/* Keep <body> from becoming its own scroll container: older rules above set
+   `overflow-x: hidden` on body, which (unlike `clip`) forces overflow-y into
+   `auto` and moves page scrolling off the viewport onto <body>. That breaks
+   every window.scrollY consumer (GSAP ScrollTrigger reveals, navbar scrolled
+   state, route scroll-to-top). `clip` still blocks horizontal overflow;
+   iOS is covered by the html-level clip at the top of this file. */
+body {
+  overflow-x: clip;
+}

@@ -1,4 +1,4 @@
-const PUBLIC_URL = process.env.PUBLIC_URL || '';
+import { PHOTO_BASE as PUBLIC_URL } from '../utils/photoUrl';
 
 // OneKey photos featured on About / Fundraisers pages — used by the home hero slideshow
 export const PAGE_PHOTOS = [

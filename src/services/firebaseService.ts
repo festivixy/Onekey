@@ -96,6 +96,15 @@ export class FirebaseService {
     return apiFetch<{ filePath: string; filename: string; originalName: string; size: number }>('/uploads', { method: 'POST', body: fd });
   }
 
+  // Team page layout (admin-configurable)
+  async getTeamLayout(): Promise<ApiResponse<{ layout: unknown }>> {
+    return apiFetch<{ layout: unknown }>('/team-layout');
+  }
+
+  async updateTeamLayout(layout: unknown): Promise<ApiResponse<null>> {
+    return apiFetch<null>('/team-layout', { method: 'PUT', body: JSON.stringify({ layout }), headers: { 'content-type': 'application/json' } });
+  }
+
   // Team Members
   async getTeamMembers(): Promise<ApiResponse<{ members: Record<string, unknown>[] }>> {
     return apiFetch<{ members: Record<string, unknown>[] }>('/team');

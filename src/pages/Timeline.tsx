@@ -1,43 +1,44 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { photoUrl as P } from '../utils/photoUrl';
+import { AnimatePresence, motion } from 'framer-motion';
 import { format, parseISO } from 'date-fns';
 import { useAuthStore } from '../store/authStore';
 import { useTimelineStore, TimelineEvent } from '../store/timelineStore';
 import { apiService } from '../services/firebaseService';
+import { useNkPageMotion } from '../components/nocturne/motion';
 
-// ─── Category config ──────────────────────────────────────────────────────────
+
+
+// ─── Category config (Nocturne tags) ─────────────────────────────────────────
 const CAT = {
-  performances: {
-    label: 'Performances',
-    icon: 'fas fa-music',
-    color: 'text-earth-300',
-    bg: 'bg-earth-500/15',
-    border: 'border-earth-400/30',
-    dot: 'bg-earth-400',
-    glow: 'shadow-earth-500/30',
-  },
-  homework: {
-    label: 'Homework Help',
-    icon: 'fas fa-graduation-cap',
-    color: 'text-sage-300',
-    bg: 'bg-sage-500/15',
-    border: 'border-sage-400/30',
-    dot: 'bg-sage-400',
-    glow: 'shadow-sage-500/30',
-  },
-  charity: {
-    label: 'Charity',
-    icon: 'fas fa-heart',
-    color: 'text-rose-300',
-    bg: 'bg-rose-500/15',
-    border: 'border-rose-400/30',
-    dot: 'bg-rose-400',
-    glow: 'shadow-rose-500/30',
+  performances: { label: 'Performance', style: { color: 'var(--nk-accent-400)', borderColor: 'rgba(124,92,255,0.5)' } },
+  homework: { label: 'Homework help', style: { color: 'var(--nk-ink-90)', borderColor: 'rgba(43,39,64,0.55)' } },
+  charity: { label: 'Charity', style: { color: 'var(--nk-accent-300)', borderColor: 'rgba(124,92,255,0.5)' } },
+  recognition: {
+    label: 'Recognition',
+    style: { color: 'var(--nk-accent-200)', borderColor: 'rgba(124,92,255,0.7)', background: 'rgba(59,116,232,0.1)' },
   },
 } as const;
 
 type CatKey = keyof typeof CAT;
 type FilterKey = 'all' | CatKey;
+
+// Permanent events hardcoded into the site — merged with stored events and
+// immune to admin-panel edits. Synthetic `__`-prefixed ids hide admin controls.
+const BUILTIN_EVENTS: TimelineEvent[] = [
+  {
+    id: '__builtin_award_2020',
+    name: 'Youth Role Model award',
+    date: '2020-01-01',
+    dateLabel: '2020',
+    category: 'recognition',
+    description:
+      'The four co-founders honoured by CCTV and the Greater Vancouver Parents Association — Vanstring recognized at the same ceremony.',
+    photo: P('/pics/onekey_award_2020_stage.jpg'),
+    createdAt: new Date().toISOString(),
+    createdBy: 'onekey',
+  },
+];
 
 const UPCOMING_EVENTS: TimelineEvent[] = [
   {
@@ -53,14 +54,12 @@ const UPCOMING_EVENTS: TimelineEvent[] = [
   },
 ];
 
-// ─── Blank form ───────────────────────────────────────────────────────────────
 const BLANK = {
   name: '', date: '', category: 'performances' as CatKey,
   location: '', time: '', attendees: '', performers: '',
   duration: '', description: '', photo: null as File | null,
 };
 
-// ─── Safe date parse ──────────────────────────────────────────────────────────
 function safeFormat(dateStr: string, fmt: string): string {
   try { return format(parseISO(dateStr), fmt); }
   catch { return dateStr; }
@@ -71,7 +70,6 @@ function dateValue(dateStr: string): number {
   return Number.isNaN(value) ? 0 : value;
 }
 
-// ─── Input component (dark-themed) ───────────────────────────────────────────
 const TInput: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => (
   <input {...props} className={`tlm-input ${props.className ?? ''}`} />
 );
@@ -82,95 +80,109 @@ const TSelect: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = ({ chil
   <select {...props} className={`tlm-input ${props.className ?? ''}`}>{children}</select>
 );
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// small inline icons (from the design)
+const Ic = {
+  cal: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4" /><path d="M16 2v4" /><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" /></svg>,
+  pin: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>,
+  clock: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>,
+  users: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>,
+  award: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="6" /><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" /></svg>,
+  pencil: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /></svg>,
+  trash: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /></svg>,
+  download: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 15V3" /><path d="m7 10 5 5 5-5" /><path d="M19 21H5" /></svg>,
+};
+
+const adminBtnStyle: React.CSSProperties = {
+  width: 26, height: 26, display: 'grid', placeItems: 'center',
+  border: '1px solid var(--nk-line-20)', borderRadius: 999, background: '#ffffff',
+  color: 'rgba(43,39,64,0.82)', cursor: 'pointer',
+};
+
+const yearPill = (year: string, active: boolean): React.CSSProperties => ({
+  fontSize: 13,
+  fontVariantNumeric: 'tabular-nums',
+  padding: '6px 22px',
+  borderRadius: 999,
+  border: active ? '1px solid var(--nk-accent)' : '1px solid var(--nk-line-20)',
+  color: active ? 'var(--nk-accent-400)' : 'var(--nk-ink-85)',
+  background: '#ffffff',
+  position: 'relative',
+  zIndex: 2,
+});
+
 const Timeline: React.FC = () => {
   const { isAuthenticated, user, hasPermission } = useAuthStore();
   const { events, addEvent, removeEvent, updateEvent, fetchEvents, isLoading } = useTimelineStore();
 
-  // UI
-  const [filter, setFilter]     = useState<FilterKey>('all');
-  const [sortDir, setSortDir]   = useState<'desc' | 'asc'>('desc');
+  const rootRef = useRef<HTMLDivElement>(null);
+  useNkPageMotion(rootRef);
+
+  const [filter, setFilter] = useState<FilterKey>('all');
+  const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
   const [expandedId, setExpand] = useState<string | null>(null);
 
-  // Hover photo bubble
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-
-  // Modals
-  const [showAdd, setShowAdd]           = useState(false);
-  const [editing, setEditing]           = useState<TimelineEvent | null>(null);
-  const [deleteId, setDeleteId]         = useState<string | null>(null);
-  const [submitting, setSubmitting]     = useState(false);
-  const [formError, setFormError]       = useState<string | null>(null);
-
-  // Form
-  const [form, setForm]             = useState({ ...BLANK });
-  const [photoPreview, setPreview]  = useState<string | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [editing, setEditing] = useState<TimelineEvent | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [form, setForm] = useState({ ...BLANK });
+  const [photoPreview, setPreview] = useState<string | null>(null);
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
   const canManage = !!(isAuthenticated && user && hasPermission('manage_timeline'));
 
-  // ── Derived data ────────────────────────────────────────────────────────────
   const today = useMemo(() => {
     const date = new Date();
     date.setHours(0, 0, 0, 0);
     return date.getTime();
   }, []);
 
-  const sourceEvents = events;
-
   const upcomingEvents = useMemo(() => {
-    const merged = [...UPCOMING_EVENTS, ...sourceEvents];
+    const merged = [...UPCOMING_EVENTS, ...events];
     const unique = new Map<string, TimelineEvent>();
-    merged.forEach(event => {
-      const key = event.id || `synthetic-${event.name}-${event.date}`;
-      unique.set(key, event);
-    });
-
+    merged.forEach(event => unique.set(event.id || `synthetic-${event.name}-${event.date}`, event));
     return Array.from(unique.values())
       .filter(event => dateValue(event.date) >= today)
       .sort((a, b) => dateValue(a.date) - dateValue(b.date));
-  }, [sourceEvents, today]);
+  }, [events, today]);
 
-  const filtered = useMemo(() => {
-    const historical = sourceEvents.filter(event => dateValue(event.date) < today);
-    const base = filter === 'all' ? historical : historical.filter(e => e.category === filter);
-    return [...base].sort((a, b) => {
+  const chronicle = useMemo(() => {
+    const historical = [...BUILTIN_EVENTS, ...events].filter(event => dateValue(event.date) < today);
+    return historical.sort((a, b) => {
       const d = dateValue(a.date) - dateValue(b.date);
       return sortDir === 'desc' ? -d : d;
     });
-  }, [sourceEvents, today, filter, sortDir]);
+  }, [events, today, sortDir]);
 
-  // Year groups with global alternating index pre-computed
+  // year groups with a global alternating index for the desktop spine
   const yearGroups = useMemo(() => {
     let gi = 0;
     const map = new Map<string, (TimelineEvent & { _left: boolean })[]>();
-    filtered.forEach(ev => {
-      const yr = safeFormat(ev.date, 'yyyy');
+    chronicle.forEach(ev => {
+      const yr = ev.dateLabel ?? safeFormat(ev.date, 'yyyy');
       if (!map.has(yr)) map.set(yr, []);
       map.get(yr)?.push({ ...ev, _left: gi++ % 2 === 0 });
     });
     return Array.from(map.entries()).map(([year, evs]) => ({ year, events: evs }));
-  }, [filtered]);
+  }, [chronicle]);
 
-  const stats = useMemo(() => ({
-    total:        events.length,
-    performances: events.filter(e => e.category === 'performances').length,
-    homework:     events.filter(e => e.category === 'homework').length,
-    charity:      events.filter(e => e.category === 'charity').length,
-  }), [events]);
+  const stats = useMemo(() => {
+    const all = [...BUILTIN_EVENTS, ...events];
+    return {
+      total: all.length,
+      performances: all.filter(e => e.category === 'performances').length,
+      homework: all.filter(e => e.category === 'homework').length,
+      charity: all.filter(e => e.category === 'charity').length,
+    };
+  }, [events]);
 
-  // ── Modal helpers ───────────────────────────────────────────────────────────
-  const openAdd = () => {
-    setForm({ ...BLANK });
-    setPreview(null);
-    setFormError(null);
-    setShowAdd(true);
-  };
-
+  // ── modal helpers (unchanged behaviour) ────────────────────────────────────
+  const openAdd = () => { setForm({ ...BLANK }); setPreview(null); setFormError(null); setShowAdd(true); };
   const openEdit = (ev: TimelineEvent) => {
     setForm({
-      name: ev.name, date: ev.date, category: ev.category,
+      name: ev.name, date: ev.date, category: ev.category as CatKey,
       location: ev.location ?? '', time: ev.time ?? '',
       attendees: ev.attendees ?? '', performers: ev.performers ?? '',
       duration: ev.duration ?? '', description: ev.description ?? '',
@@ -180,21 +192,13 @@ const Timeline: React.FC = () => {
     setFormError(null);
     setEditing(ev);
   };
-
-  const closeModal = () => {
-    setShowAdd(false);
-    setEditing(null);
-    setFormError(null);
-    setSubmitting(false);
-  };
-
+  const closeModal = () => { setShowAdd(false); setEditing(null); setFormError(null); setSubmitting(false); };
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setForm(p => ({ ...p, photo: file }));
     setPreview(URL.createObjectURL(file));
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -207,22 +211,19 @@ const Timeline: React.FC = () => {
         if (res.success && res.data) photoUrl = res.data.filePath;
         else setFormError('Photo upload failed — event saved without new photo.');
       }
-
       const payload = {
         name: form.name, date: form.date, category: form.category,
-        location:    form.location    || undefined,
-        time:        form.time        || undefined,
-        attendees:   form.attendees   || undefined,
-        performers:  form.performers  || undefined,
-        duration:    form.duration    || undefined,
+        location: form.location || undefined,
+        time: form.time || undefined,
+        attendees: form.attendees || undefined,
+        performers: form.performers || undefined,
+        duration: form.duration || undefined,
         description: form.description || undefined,
         photo: photoUrl,
         createdBy: user.id,
       };
-
       if (editing) await updateEvent(editing.id, payload);
-      else          await addEvent(payload);
-
+      else await addEvent(payload);
       closeModal();
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : 'Something went wrong');
@@ -230,7 +231,6 @@ const Timeline: React.FC = () => {
       setSubmitting(false);
     }
   };
-
   const handleDelete = async () => {
     if (!deleteId) return;
     await removeEvent(deleteId);
@@ -238,570 +238,326 @@ const Timeline: React.FC = () => {
     setDeleteId(null);
   };
 
-  // ── Render ──────────────────────────────────────────────────────────────────
-  return (
-    <div className="min-h-screen bg-stone-900">
+  // ── event card (shared desktop / phone) ────────────────────────────────────
+  const EventCard: React.FC<{ ev: TimelineEvent; compact?: boolean }> = ({ ev, compact }) => {
+    const meta = CAT[ev.category as CatKey] ?? CAT.performances;
+    const isExpanded = expandedId === ev.id;
+    const isDim = filter !== 'all' && ev.category !== filter;
+    const dateShown = ev.dateLabel ?? safeFormat(ev.date, 'MMM d, yyyy');
+    return (
+      <div className={`nk-ev ${isDim ? 'nk-dim' : ''}`} style={compact ? { padding: 20 } : undefined}>
+        {canManage && !ev.id.startsWith('__') && (
+          <span className="nk-admin">
+            <button aria-label="Edit event" style={adminBtnStyle} onClick={() => openEdit(ev)}>{Ic.pencil}</button>
+            <button aria-label="Delete event" style={adminBtnStyle} onClick={() => setDeleteId(ev.id)}>{Ic.trash}</button>
+          </span>
+        )}
+        <span className="nk-tag" style={meta.style}>{meta.label}</span>
+        <div style={{ fontFamily: 'var(--nk-serif)', fontSize: compact ? 20 : 24, fontWeight: 700, lineHeight: 1.15 }}>{ev.name}</div>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <span className="nk-chip">{dateShown}</span>
+          {ev.location && <span className="nk-chip">{Ic.pin}{ev.location}</span>}
+          {ev.duration && <span className="nk-chip">{Ic.clock}{ev.duration}</span>}
+          {(ev.performers || ev.attendees) && (
+            <span className="nk-chip">
+              {Ic.users}
+              {[ev.performers && `${ev.performers} performers`, ev.attendees && `${ev.attendees} attendees`].filter(Boolean).join(' · ')}
+            </span>
+          )}
+          {ev.category === 'recognition' && <span className="nk-chip">{Ic.award}Public-welfare category</span>}
+        </div>
+        {ev.photo && (
+          <img
+            className="nk-plate"
+            src={ev.photo}
+            alt={ev.name}
+            loading="lazy"
+            style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', marginTop: 6 }}
+          />
+        )}
+        {ev.description && (
+          <p
+            style={{
+              fontSize: 13, lineHeight: 1.7, margin: 0, color: 'var(--nk-ink-85)',
+              ...(isExpanded ? {} : { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }),
+            }}
+          >
+            {ev.description}
+          </p>
+        )}
+        {ev.description && ev.description.length > 120 && (
+          <button
+            onClick={() => setExpand(isExpanded ? null : ev.id)}
+            style={{ alignSelf: 'flex-start', background: 'none', border: 'none', padding: 0, fontSize: 13, color: 'var(--nk-accent-400)', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            {isExpanded ? 'Show less' : 'Read more'}
+          </button>
+        )}
+      </div>
+    );
+  };
 
-      {/* ── Stats strip ── */}
-      <div id="timeline-body" className="border-b border-stone-700 bg-stone-900">
-        <div className="container py-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+  const spineDot = (filled: boolean): React.CSSProperties => ({
+    position: 'absolute', left: '50%', top: 34, transform: 'translateX(-50%)',
+    width: 11, height: 11, borderRadius: '50%',
+    ...(filled
+      ? { background: 'var(--nk-accent)', boxShadow: '0 0 0 5px rgba(124,92,255,0.18)' }
+      : { border: '1.5px solid var(--nk-accent)', background: '#ffffff' }),
+  });
+
+  let dotIndex = 0;
+
+  return (
+    <div ref={rootRef} className="nk-page nk-grain">
+      {/* masthead: the register */}
+      <div className="px-6 pt-10 md:px-16 md:pt-11">
+        <div className="flex flex-wrap items-baseline gap-4 md:gap-6" style={{ borderBottom: '1px solid var(--nk-line-20)', paddingBottom: 22 }}>
+          <span style={{ fontSize: 12, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--nk-royal)' }}>Events &amp; timeline</span>
+          <span style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 17, color: 'var(--nk-ink-78)' }}>
+            2020 — today · {sortDir === 'desc' ? 'newest first' : 'oldest first'}
+          </span>
+          <span className="md:ml-auto flex flex-wrap items-baseline gap-5 md:gap-8">
             {[
-              { label: 'Total Events',       value: stats.total,        color: 'text-white' },
-              { label: 'Performances',        value: stats.performances, color: 'text-earth-400' },
-              { label: 'Tutoring Sessions',   value: stats.homework,     color: 'text-sage-400' },
-              { label: 'Charity Events',      value: stats.charity,      color: 'text-rose-400' },
-            ].map((s, i) => (
-              <motion.div
-                key={s.label}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-              >
-                <div className={`text-4xl font-bold font-display ${s.color}`}>{s.value}</div>
-                <div className="mt-1 text-[11px] font-semibold tracking-widest uppercase text-stone-500">{s.label}</div>
-              </motion.div>
+              { n: stats.total, label: 'events' },
+              { n: stats.performances, label: 'performances' },
+              { n: stats.homework, label: 'tutoring' },
+              { n: stats.charity, label: 'charity' },
+            ].map(s => (
+              <span key={s.label} style={{ fontSize: 12, color: 'var(--nk-ink-78)' }}>
+                <b style={{ fontFamily: 'var(--nk-serif)', fontWeight: 500, fontSize: 24, color: 'var(--nk-ink)', fontVariantNumeric: 'tabular-nums' }}>{s.n}</b>{' '}
+                {s.label}
+              </span>
             ))}
-          </div>
+          </span>
         </div>
       </div>
 
-      {/* ── Upcoming events ── */}
-      <section className="border-b border-stone-700 bg-stone-950/70">
-        <div className="container max-w-6xl py-10">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-6">
-            <div>
-              <p className="text-[11px] font-semibold tracking-widest uppercase text-earth-400">Next on the calendar</p>
-              <h2 className="mt-1 text-2xl md:text-3xl font-bold font-display text-white">Upcoming Events</h2>
-            </div>
-            {canManage && (
-              <motion.button
-                onClick={openAdd}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs font-semibold bg-earth-600 hover:bg-earth-500 text-white transition-all"
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                <i className="fas fa-plus" />
-                Add Upcoming Event
-              </motion.button>
-            )}
+      {/* upcoming */}
+      <div className="nk-fade px-6 pt-10 md:px-16 md:pt-[72px]">
+        <div className="flex flex-wrap items-baseline justify-between gap-3" style={{ borderBottom: '1px solid var(--nk-line-20)', paddingBottom: 14, marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 18 }}>
+            <h2 className="text-[24px] md:text-[32px]" style={{ fontWeight: 700 }}>Upcoming</h2>
+            <span style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 16, color: 'var(--nk-ink-78)' }}>next on the bill</span>
           </div>
-
-          {upcomingEvents.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {upcomingEvents.slice(0, 3).map((event, index) => {
-                const meta = CAT[event.category];
-                return (
-                  <motion.article
-                    key={event.id}
-                    className="bg-stone-900 border border-stone-700 rounded-2xl p-5 hover:border-stone-600 transition-colors"
-                    initial={{ opacity: 0, y: 16 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.08 }}
-                  >
-                    <div className="flex items-start justify-between gap-3 mb-4">
-                      <div>
-                        <time className="block text-sm font-semibold text-earth-300">
-                          {safeFormat(event.date, 'MMMM d, yyyy')}
-                        </time>
-                        {event.time && <span className="text-xs text-stone-500">{event.time}</span>}
-                      </div>
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${meta.bg} ${meta.color} ${meta.border}`}>
-                        <i className={`${meta.icon} text-[9px]`} />
-                        {meta.label}
-                      </span>
-                    </div>
-
-                    <h3 className="text-lg font-bold text-white leading-snug">{event.name}</h3>
-                    {event.location && (
-                      <p className="mt-2 flex items-center gap-2 text-sm text-stone-400">
-                        <i className="fas fa-map-marker-alt text-[11px] text-earth-400" />
-                        {event.location}
-                      </p>
-                    )}
-                    {event.description && (
-                      <p className="mt-3 text-sm text-stone-300 leading-relaxed line-clamp-3">
-                        {event.description}
-                      </p>
-                    )}
-                  </motion.article>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-stone-700 bg-stone-900/60 px-6 py-8 text-center">
-              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-earth-500/10 text-earth-300">
-                <i className="fas fa-calendar-plus" />
+          {canManage && (
+            <button className="nk-pill" onClick={openAdd}>+ Add event</button>
+          )}
+        </div>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+          {upcomingEvents.slice(0, 3).map(ev => {
+            const meta = CAT[ev.category as CatKey] ?? CAT.performances;
+            return (
+              <div key={ev.id} className="nk-ev" style={{ borderColor: 'rgba(124,92,255,0.45)' }}>
+                <span className="nk-tag" style={meta.style}>{meta.label}</span>
+                <div style={{ fontFamily: 'var(--nk-serif)', fontSize: 24, fontWeight: 700, lineHeight: 1.15 }}>{ev.name}</div>
+                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                  <span className="nk-chip">{Ic.cal}{safeFormat(ev.date, 'EEE, MMM d')}{ev.time ? ` · ${ev.time}` : ''}</span>
+                  {ev.location && <span className="nk-chip">{Ic.pin}{ev.location}</span>}
+                </div>
+                {ev.description && <p style={{ fontSize: 13, lineHeight: 1.7, margin: 0, color: 'var(--nk-ink-85)' }}>{ev.description}</p>}
               </div>
-              <h3 className="text-base font-semibold text-stone-200">No upcoming events posted yet</h3>
-              <p className="mt-2 text-sm text-stone-500">
-                Future concerts, tutoring sessions, and fundraisers will appear here once they are scheduled.
-              </p>
+            );
+          })}
+          {upcomingEvents.length === 0 && (
+            <div
+              style={{
+                borderRadius: 16, border: '1px dashed rgba(59,52,95,0.18)', padding: '26px 28px',
+                display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', justifyContent: 'center', textAlign: 'center',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(43,39,64,0.62)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4" /><path d="M16 2v4" /><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" /></svg>
+              <div style={{ fontFamily: 'var(--nk-serif)', fontSize: 19, fontWeight: 700, color: 'var(--nk-ink-90)' }}>No upcoming events posted yet</div>
+              <div style={{ fontSize: 12, color: 'rgba(43,39,64,0.68)' }}>Follow @on3keymusic for announcements</div>
             </div>
           )}
         </div>
-      </section>
+      </div>
 
-      {/* ── Sticky filter bar ── */}
-      <div className="sticky top-[4.4rem] z-30 bg-stone-900 border-b border-stone-700">
-        <div className="container py-3 flex flex-wrap items-center gap-2 justify-between">
-          {/* Filters */}
-          <div className="flex flex-wrap gap-2">
-            {(['all', 'performances', 'homework', 'charity'] as const).map(cat => {
-              const active = filter === cat;
-              const meta = cat !== 'all' ? CAT[cat] : null;
+      {/* sticky filter bar */}
+      <div
+        className="mt-10 flex items-center gap-2 overflow-x-auto px-6 py-3 md:mt-16 md:gap-[10px] md:px-16 md:py-[18px]"
+        style={{
+          position: 'sticky', top: 0, zIndex: 50,
+          background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)',
+          borderTop: '1px solid var(--nk-line-20)', borderBottom: '1px solid var(--nk-line-20)',
+          scrollbarWidth: 'none',
+        }}
+      >
+        {(['all', 'performances', 'homework', 'charity', 'recognition'] as const).map(cat => (
+          <button
+            key={cat}
+            className={`nk-pill ${filter === cat ? 'on' : ''}`}
+            style={{ flex: 'none' }}
+            onClick={() => setFilter(cat)}
+          >
+            {cat === 'all' ? 'All events' : CAT[cat].label}
+          </button>
+        ))}
+        <span className="ml-auto hidden md:flex" style={{ border: '1px solid rgba(59,52,95,0.18)', borderRadius: 999, overflow: 'hidden' }}>
+          <button
+            onClick={() => setSortDir('desc')}
+            style={{
+              fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 16px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+              background: sortDir === 'desc' ? 'rgba(59,116,232,0.12)' : 'transparent',
+              color: sortDir === 'desc' ? 'var(--nk-accent-400)' : 'var(--nk-ink-78)',
+            }}
+          >
+            Newest first
+          </button>
+          <button
+            onClick={() => setSortDir('asc')}
+            style={{
+              fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '8px 16px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+              background: sortDir === 'asc' ? 'rgba(59,116,232,0.12)' : 'transparent',
+              color: sortDir === 'asc' ? 'var(--nk-accent-400)' : 'var(--nk-ink-78)',
+            }}
+          >
+            Oldest first
+          </button>
+        </span>
+      </div>
+
+      {/* loading */}
+      {isLoading && chronicle.length <= BUILTIN_EVENTS.length && (
+        <div style={{ padding: '48px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 26, height: 26, border: '2px solid var(--nk-line-20)', borderTopColor: 'var(--nk-accent)', borderRadius: '50%', animation: 'ok-spin 0.9s linear infinite' }} />
+          <span style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--nk-ink-58)' }}>Loading the chronicle…</span>
+        </div>
+      )}
+
+      {/* chronicle spine — desktop */}
+      <div className="hidden md:block" style={{ position: 'relative', padding: '56px 64px 20px' }}>
+        <span style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'var(--nk-line-17)' }} />
+        {yearGroups.map((group, groupIdx) => (
+          <React.Fragment key={group.year}>
+            <div style={{ display: 'flex', justifyContent: 'center', margin: groupIdx === 0 ? '0 0 36px' : '36px 0', position: 'relative' }}>
+              <span style={yearPill(group.year, groupIdx === 0)}>{group.year}</span>
+            </div>
+            {group.events.map(ev => {
+              const filled = dotIndex++ % 3 === 0;
               return (
-                <motion.button
-                  key={cat}
-                  onClick={() => setFilter(cat)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all border ${
-                    active
-                      ? meta
-                        ? `${meta.bg} ${meta.color} ${meta.border}`
-                        : 'bg-white/12 text-white border-white/25'
-                      : 'bg-transparent text-stone-500 border-white/10 hover:text-stone-300 hover:border-white/20'
-                  }`}
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
-                >
-                  {cat === 'all' ? 'All Events' : meta?.label}
-                </motion.button>
+                <div key={ev.id} style={{ display: 'grid', gridTemplateColumns: '1fr 64px 1fr', marginBottom: 8 }}>
+                  {ev._left ? <EventCard ev={ev} /> : <div />}
+                  <div style={{ position: 'relative' }}>
+                    <span style={spineDot(filled)} />
+                  </div>
+                  {ev._left ? <div /> : <EventCard ev={ev} />}
+                </div>
               );
             })}
-          </div>
+          </React.Fragment>
+        ))}
+      </div>
 
-          {/* Right controls */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium text-stone-500 border border-white/10 hover:text-stone-300 hover:border-white/20 transition-all"
-            >
-              <i className={`fas fa-sort-amount-${sortDir === 'desc' ? 'down' : 'up'}`} />
-              {sortDir === 'desc' ? 'Newest first' : 'Oldest first'}
-            </button>
-            {canManage && (
-              <motion.button
-                onClick={openAdd}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-earth-600 hover:bg-earth-500 text-white transition-all"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                <i className="fas fa-plus" />
-                Add Event
-              </motion.button>
-            )}
-          </div>
+      {/* chronicle — phone rail */}
+      <div className="md:hidden" style={{ position: 'relative', padding: '32px 24px 20px 44px' }}>
+        <span style={{ position: 'absolute', left: 28, top: 0, bottom: 0, width: 1, background: 'var(--nk-line-17)' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {yearGroups.map((group, groupIdx) => (
+            <React.Fragment key={group.year}>
+              <span style={{ ...yearPill(group.year, groupIdx === 0), alignSelf: 'flex-start', marginLeft: -30, fontSize: 12, padding: '5px 16px' }}>
+                {group.year}
+              </span>
+              {group.events.map(ev => (
+                <div key={ev.id} style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: -17, top: 26, width: 9, height: 9, borderRadius: '50%', border: '1.5px solid var(--nk-accent)', background: '#ffffff', zIndex: 2 }} />
+                  <EventCard ev={ev} compact />
+                </div>
+              ))}
+            </React.Fragment>
+          ))}
         </div>
       </div>
 
-      {/* ── Timeline body ── */}
-      <section className="container max-w-5xl py-16">
-
-        {/* Loading */}
-        {isLoading && filtered.length === 0 && (
-          <div className="py-24 flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-2 border-white/20 border-t-earth-400 rounded-full animate-spin" />
-            <p className="text-sm text-stone-500">Loading chronicle…</p>
-          </div>
-        )}
-
-        {/* Empty */}
-        {!isLoading && filtered.length === 0 && (
-          <motion.div className="py-24 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <div className="text-7xl mb-5 opacity-20 font-display">◎</div>
-            <h3 className="text-xl font-semibold text-stone-300 mb-2">No events yet</h3>
-            <p className="text-sm text-stone-500">
-              {canManage
-                ? 'Add the first event to start building the chronicle.'
-                : 'The story is just beginning — check back soon.'}
-            </p>
-            {canManage && (
-              <motion.button
-                onClick={openAdd}
-                className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold bg-earth-600 hover:bg-earth-500 text-white transition-all"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                <i className="fas fa-plus" /> Add first event
-              </motion.button>
-            )}
-          </motion.div>
-        )}
-
-        {/* The actual timeline */}
-        {filtered.length > 0 && (
-          <div className="relative">
-            {/* Vertical spine */}
-            <div
-              className="absolute left-[1.1rem] md:left-1/2 top-0 bottom-0 w-px"
-              style={{ background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.1) 5%, rgba(255,255,255,0.1) 95%, transparent)' }}
-            />
-
-            {yearGroups.map((group) => (
-              <div key={group.year}>
-                {/* Year pill */}
-                <motion.div
-                  className="relative flex items-center mb-6 mt-2"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5 }}
-                >
-                  {/* Year ring on spine */}
-                  <div className="absolute left-[1.1rem] md:left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-white/30 ring-4 ring-stone-900 z-10" />
-                  {/* Year label — centered desktop, offset mobile */}
-                  <div className="ml-10 md:ml-0 md:w-full md:flex md:justify-center">
-                    <span className="inline-block px-4 py-0.5 text-xs font-bold font-display text-stone-300 bg-stone-800 border border-white/15 rounded-full tracking-widest">
-                      {group.year}
-                    </span>
-                  </div>
-                </motion.div>
-
-                {/* Events */}
-                {group.events.map((event, ei) => {
-                  const meta      = CAT[event.category];
-                  const isLeft    = event._left;
-                  const isExpanded = expandedId === event.id;
-
-                  return (
-                    <motion.div
-                      key={event.id}
-                      className="relative flex mb-10"
-                      initial={{ opacity: 0, y: 28 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, margin: '-60px' }}
-                      transition={{ duration: 0.5, delay: Math.min(ei * 0.07, 0.35) }}
-                    >
-                      {/* Dot on spine */}
-                      <div
-                        className={`absolute left-[1.1rem] md:left-1/2 top-5 z-10 w-3 h-3 -translate-x-1/2 rounded-full ring-4 ring-stone-900 ${meta.dot}`}
-                      />
-
-                      {/* Mobile: all cards offset to the right of spine */}
-                      {/* Desktop: alternate left / right of spine */}
-
-                      {/* Left spacer (desktop only, for right-side cards) */}
-                      {!isLeft && <div className="hidden md:block flex-1" />}
-
-                      {/* Card wrapper */}
-                      <div className={`
-                        relative flex-1 pl-10 md:pl-0 md:flex-none md:w-[calc(50%-2.5rem)]
-                        ${isLeft ? 'md:mr-auto md:pr-0' : 'md:ml-auto md:pl-0'}
-                      `}>
-                        {/* Hover photo bubble */}
-                        <AnimatePresence>
-                          {hoveredId === event.id && event.photo && (
-                            <motion.div
-                              className="absolute bottom-[calc(100%+10px)] left-4 z-40 pointer-events-none"
-                              initial={{ opacity: 0, scale: 0.6, y: 14 }}
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
-                              exit={{ opacity: 0, scale: 0.6, y: 14 }}
-                              transition={{ type: 'spring', stiffness: 460, damping: 26 }}
-                            >
-                              <img
-                                src={event.photo}
-                                alt={event.name}
-                                className="block max-w-[320px] max-h-[320px] w-auto h-auto rounded-2xl shadow-2xl ring-1 ring-white/15"
-                              />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-
-                        <motion.article
-                          className="group bg-stone-800 border border-stone-700 rounded-2xl overflow-hidden hover:border-stone-600 transition-colors cursor-pointer"
-                          whileHover={{ y: -3 }}
-                          transition={{ type: 'spring', stiffness: 280, damping: 24 }}
-                          onHoverStart={() => setHoveredId(event.id)}
-                          onHoverEnd={() => setHoveredId(null)}
-                          onClick={() => setExpand(isExpanded ? null : event.id)}
-                        >
-
-                          <div className="p-5">
-                            {/* Top row: category + date + admin actions */}
-                            <div className="flex items-start justify-between gap-2 mb-2.5">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${meta.bg} ${meta.color} ${meta.border}`}>
-                                  <i className={`${meta.icon} text-[9px]`} />
-                                  {meta.label}
-                                </span>
-                                <time className="text-[11px] text-stone-400">
-                                  {safeFormat(event.date, 'MMMM d, yyyy')}
-                                </time>
-                              </div>
-
-                              {/* Admin controls — visible on hover */}
-                              {canManage && (
-                                <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button
-                                    onClick={e => { e.stopPropagation(); openEdit(event); }}
-                                    className="p-1.5 rounded-lg text-stone-500 hover:text-earth-300 hover:bg-earth-500/15 transition-all"
-                                    title="Edit event"
-                                  >
-                                    <i className="fas fa-pencil-alt text-xs" />
-                                  </button>
-                                  <button
-                                    onClick={e => { e.stopPropagation(); setDeleteId(event.id); }}
-                                    className="p-1.5 rounded-lg text-stone-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                                    title="Delete event"
-                                  >
-                                    <i className="fas fa-trash-alt text-xs" />
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Title */}
-                            <h3 className="text-[1.05rem] font-bold text-white leading-snug mb-3">{event.name}</h3>
-
-                            {/* Quick-info chips */}
-                            {(event.location || event.time || event.duration) && (
-                              <div className="flex flex-wrap gap-1.5 mb-3">
-                                {event.location && (
-                                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] text-stone-300 bg-stone-700/60 border border-stone-600">
-                                    <i className="fas fa-map-marker-alt text-[9px] text-earth-400" />
-                                    {event.location}
-                                  </span>
-                                )}
-                                {event.time && (
-                                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] text-stone-300 bg-stone-700/60 border border-stone-600">
-                                    <i className="fas fa-clock text-[9px] text-stone-400" />
-                                    {event.time}
-                                  </span>
-                                )}
-                                {event.duration && (
-                                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] text-stone-300 bg-stone-700/60 border border-stone-600">
-                                    <i className="fas fa-hourglass-half text-[9px] text-stone-400" />
-                                    {event.duration}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Description preview (collapsed) */}
-                            {event.description && !isExpanded && (
-                              <p className="text-sm text-stone-300 leading-relaxed line-clamp-2 mb-1">
-                                {event.description}
-                              </p>
-                            )}
-
-                            {/* Expanded content */}
-                            <AnimatePresence>
-                              {isExpanded && (
-                                <motion.div
-                                  initial={{ opacity: 0, height: 0 }}
-                                  animate={{ opacity: 1, height: 'auto' }}
-                                  exit={{ opacity: 0, height: 0 }}
-                                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                  style={{ overflow: 'hidden' }}
-                                >
-                                  {event.description && (
-                                    <p className="text-sm text-stone-300 leading-relaxed whitespace-pre-wrap mb-4">
-                                      {event.description}
-                                    </p>
-                                  )}
-                                  {(event.attendees || event.performers) && (
-                                    <div className="flex flex-wrap gap-4 pt-3 border-t border-white/10">
-                                      {event.attendees && (
-                                        <div className="flex items-center gap-1.5 text-xs text-stone-400">
-                                          <i className="fas fa-users text-earth-400" />
-                                          <span>{event.attendees} attendees</span>
-                                        </div>
-                                      )}
-                                      {event.performers && (
-                                        <div className="flex items-center gap-1.5 text-xs text-stone-400">
-                                          <i className="fas fa-music text-earth-400" />
-                                          <span>{event.performers} performers</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-
-                            {/* Expand toggle */}
-                            {(event.description || event.attendees || event.performers) && (
-                              <div className="mt-3 flex items-center gap-1 text-[11px] text-stone-500 hover:text-stone-300 transition-colors select-none">
-                                <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'} text-[8px]`} />
-                                {isExpanded ? 'Collapse' : 'Read more'}
-                              </div>
-                            )}
-                          </div>
-                        </motion.article>
-                      </div>
-
-                      {/* Right spacer (desktop, for left-side cards) */}
-                      {isLeft && <div className="hidden md:block flex-1" />}
-                    </motion.div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* ── Photo archive link ── */}
-      <div className="border-t border-white/8 py-8">
-        <div className="container text-center">
-          <a
-            href="https://drive.google.com/drive/u/0/folders/1SASLgBECg8h7-37JtEGAVDpu0_5hwyHZ"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm text-stone-500 hover:text-earth-300 transition-colors"
-          >
-            <i className="fab fa-google-drive" />
-            View full photo archive on Google Drive
-          </a>
-        </div>
+      {/* archive link */}
+      <div style={{ textAlign: 'center', padding: '28px 24px 56px' }}>
+        <a
+          href="https://drive.google.com/drive/u/0/folders/1SASLgBECg8h7-37JtEGAVDpu0_5hwyHZ"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(43,39,64,0.68)', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+        >
+          {Ic.download}View full photo archive on Google Drive
+        </a>
       </div>
 
-      {/* ── Add / Edit modal ── */}
+      {/* ── add / edit modal (dark, unchanged behaviour) ── */}
       <AnimatePresence>
         {(showAdd || editing) && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={closeModal}
           >
             <motion.div
               className="w-full max-w-2xl bg-stone-900 border border-white/12 rounded-2xl shadow-2xl"
-              initial={{ opacity: 0, y: 28, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 14, scale: 0.97 }}
+              initial={{ opacity: 0, y: 28, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 14, scale: 0.97 }}
               transition={{ type: 'spring', stiffness: 340, damping: 30 }}
               onClick={e => e.stopPropagation()}
             >
-              {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
-                <h2 className="text-sm font-bold text-white font-display uppercase tracking-widest">
-                  {editing ? 'Edit Event' : 'Add New Event'}
-                </h2>
+                <h2 className="text-sm font-bold text-white uppercase tracking-widest">{editing ? 'Edit Event' : 'Add New Event'}</h2>
                 <button onClick={closeModal} className="p-1.5 rounded-lg text-stone-500 hover:text-white hover:bg-white/10 transition-all">
                   <i className="fas fa-times" />
                 </button>
               </div>
-
-              {/* Form */}
               <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[78vh]">
                 <div className="space-y-4">
                   {formError && (
-                    <div className="p-3 rounded-xl bg-red-500/10 border border-red-400/30 text-sm text-red-300">
-                      {formError}
-                    </div>
+                    <div className="p-3 rounded-xl bg-red-500/10 border border-red-400/30 text-sm text-red-300">{formError}</div>
                   )}
-
-                  {/* Name + Category */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="tlm-label">Event Name *</label>
-                      <TInput
-                        type="text"
-                        value={form.name}
-                        onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                        placeholder="e.g. Spring Concert at Sunrise Manor"
-                        required
-                      />
+                      <TInput type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Spring Concert at Sunrise Manor" required />
                     </div>
                     <div>
                       <label className="tlm-label">Category *</label>
-                      <TSelect
-                        value={form.category}
-                        onChange={e => setForm(p => ({ ...p, category: e.target.value as CatKey }))}
-                        required
-                      >
+                      <TSelect value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value as CatKey }))} required>
                         <option value="performances">Performances</option>
                         <option value="homework">Homework Help</option>
                         <option value="charity">Charity Events</option>
                       </TSelect>
                     </div>
                   </div>
-
-                  {/* Date + Time */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="tlm-label">Date *</label>
-                      <TInput
-                        type="date"
-                        value={form.date}
-                        onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
-                        required
-                      />
+                      <TInput type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} required />
                     </div>
                     <div>
                       <label className="tlm-label">Time</label>
-                      <TInput
-                        type="time"
-                        value={form.time}
-                        onChange={e => setForm(p => ({ ...p, time: e.target.value }))}
-                      />
+                      <TInput type="time" value={form.time} onChange={e => setForm(p => ({ ...p, time: e.target.value }))} />
                     </div>
                   </div>
-
-                  {/* Location + Duration */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="tlm-label">Location</label>
-                      <TInput
-                        type="text"
-                        value={form.location}
-                        onChange={e => setForm(p => ({ ...p, location: e.target.value }))}
-                        placeholder="e.g. Sunrise Manor, Room 4"
-                      />
+                      <TInput type="text" value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} placeholder="e.g. Sunrise Manor, Room 4" />
                     </div>
                     <div>
                       <label className="tlm-label">Duration</label>
-                      <TInput
-                        type="text"
-                        value={form.duration}
-                        onChange={e => setForm(p => ({ ...p, duration: e.target.value }))}
-                        placeholder="e.g. 2 hours"
-                      />
+                      <TInput type="text" value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))} placeholder="e.g. 2 hours" />
                     </div>
                   </div>
-
-                  {/* Attendees + Performers */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="tlm-label">Attendees</label>
-                      <TInput
-                        type="text"
-                        value={form.attendees}
-                        onChange={e => setForm(p => ({ ...p, attendees: e.target.value }))}
-                        placeholder="e.g. 45 seniors"
-                      />
+                      <TInput type="text" value={form.attendees} onChange={e => setForm(p => ({ ...p, attendees: e.target.value }))} placeholder="e.g. 45 seniors" />
                     </div>
                     <div>
                       <label className="tlm-label">Performers / Volunteers</label>
-                      <TInput
-                        type="text"
-                        value={form.performers}
-                        onChange={e => setForm(p => ({ ...p, performers: e.target.value }))}
-                        placeholder="e.g. 8 student volunteers"
-                      />
+                      <TInput type="text" value={form.performers} onChange={e => setForm(p => ({ ...p, performers: e.target.value }))} placeholder="e.g. 8 student volunteers" />
                     </div>
                   </div>
-
-                  {/* Description */}
                   <div>
                     <label className="tlm-label">Description</label>
-                    <TTextarea
-                      rows={6}
-                      value={form.description}
-                      onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                      placeholder="Tell the story of this event — what happened, who was there, what made it meaningful…"
-                    />
+                    <TTextarea rows={6} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Tell the story of this event — what happened, who was there, what made it meaningful…" />
                   </div>
-
-                  {/* Photo upload */}
                   <div>
                     <label className="tlm-label">Cover Photo</label>
                     <label className="block cursor-pointer">
-                      <div className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-white/12 rounded-xl overflow-hidden transition-all hover:border-earth-400/40 hover:bg-earth-500/5 ${photoPreview ? 'h-44' : 'h-28'}`}>
+                      <div className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-white/12 rounded-xl overflow-hidden transition-all hover:border-white/30 ${photoPreview ? 'h-44' : 'h-28'}`}>
                         {photoPreview ? (
                           <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                         ) : (
@@ -823,29 +579,19 @@ const Timeline: React.FC = () => {
                       </button>
                     )}
                   </div>
-
-                  {/* Actions */}
                   <div className="flex justify-end gap-3 pt-2 border-t border-white/10">
-                    <button
-                      type="button"
-                      onClick={closeModal}
-                      className="px-4 py-2 text-sm text-stone-400 hover:text-white transition-colors"
-                      disabled={submitting}
-                    >
+                    <button type="button" onClick={closeModal} className="px-4 py-2 text-sm text-stone-400 hover:text-white transition-colors" disabled={submitting}>
                       Cancel
                     </button>
-                    <motion.button
+                    <button
                       type="submit"
-                      className="px-5 py-2 text-sm font-semibold bg-earth-600 hover:bg-earth-500 text-white rounded-xl transition-all disabled:opacity-50 flex items-center gap-2"
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
+                      className="px-5 py-2 text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all disabled:opacity-50 flex items-center gap-2"
                       disabled={submitting}
                     >
                       {submitting
                         ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Saving…</>
-                        : editing ? 'Update Event' : 'Add Event'
-                      }
-                    </motion.button>
+                        : editing ? 'Update Event' : 'Add Event'}
+                    </button>
                   </div>
                 </div>
               </form>
@@ -854,21 +600,17 @@ const Timeline: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* ── Delete confirmation ── */}
+      {/* ── delete confirmation ── */}
       <AnimatePresence>
         {deleteId && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setDeleteId(null)}
           >
             <motion.div
               className="w-full max-w-sm bg-stone-900 border border-white/12 rounded-2xl shadow-2xl p-6"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 340, damping: 30 }}
               onClick={e => e.stopPropagation()}
             >
@@ -878,18 +620,8 @@ const Timeline: React.FC = () => {
               <h3 className="text-base font-bold text-white mb-1">Delete this event?</h3>
               <p className="text-sm text-stone-400 mb-6">This cannot be undone. The event will be permanently removed from the chronicle.</p>
               <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setDeleteId(null)}
-                  className="px-4 py-2 text-sm text-stone-400 hover:text-white transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-500 text-white rounded-xl transition-all"
-                >
-                  Delete
-                </button>
+                <button onClick={() => setDeleteId(null)} className="px-4 py-2 text-sm text-stone-400 hover:text-white transition-colors">Cancel</button>
+                <button onClick={handleDelete} className="px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-500 text-white rounded-xl transition-all">Delete</button>
               </div>
             </motion.div>
           </motion.div>

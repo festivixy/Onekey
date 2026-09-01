@@ -1,200 +1,215 @@
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { NkGlyphs, NkPhotoSlot, useNkPageMotion } from '../components/nocturne/motion';
 
-gsap.registerPlugin(ScrollTrigger);
-
-const TIMELINE_EVENTS = [
-  {
-    year: '2020',
-    title: 'OneKey is founded',
-    description: 'Jack Wang founds OneKey as a student-led initiative to share music with senior communities.',
-  },
-  {
-    year: '2021',
-    title: 'Homework help launches',
-    description: 'We expand beyond music — offering tutoring to younger students alongside our performance work.',
-  },
-  {
-    year: '2022',
-    title: 'Performances expand',
-    description: 'Younger musicians begin joining our trips to senior homes, broadening our reach across generations.',
-  },
-  {
-    year: '2022',
-    title: 'Partnership with Vanstring',
-    description: 'OneKey teams up with the Vanstring student string ensemble — broadening our community impact.',
-  },
+const STORY = [
+  { year: '2020', title: 'OneKey is founded', body: 'Four co-founders start bringing student musicians to senior homes.', filled: true },
+  { year: '2020', title: 'National recognition', body: 'The Youth Role Model award, public-welfare category.' },
+  { year: '2021', title: 'Homework help is founded', body: 'Tutoring becomes the second pillar, equal to the first.' },
+  { year: '2022', title: 'Performances expand', body: 'More homes, more programs, more students on stage.' },
+  { year: '2022', title: 'Partnership with Vanstring', body: 'The student string orchestra joins as partner ensemble.', last: true },
 ];
+
+const eyebrow: React.CSSProperties = { fontSize: 12, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--nk-royal)' };
 
 const About: React.FC = () => {
   const rootRef = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    if (typeof window !== 'undefined' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return;
-    }
-
-    const ctx = gsap.context(() => {
-      // Initial hidden states (before paint)
-      gsap.set('.about-tl-eyebrow', { clipPath: 'inset(0 100% 0 0)', opacity: 0 });
-      gsap.set('.about-tl-heading', { y: 30, opacity: 0, clipPath: 'inset(0 0 100% 0)' });
-      gsap.set('.about-tl-connector', { scaleX: 0, transformOrigin: 'left center' });
-      gsap.set('.about-tl-event',   { y: 32, opacity: 0 });
-      gsap.set('.about-tl-dot',     { scale: 0 });
-
-      // Heading + intro reveal
-      const introTl = gsap.timeline({
-        scrollTrigger: { trigger: '.about-tl-section', start: 'top 78%', once: true },
-        defaults: { ease: 'power3.out' },
-      });
-      introTl
-        .to('.about-tl-eyebrow', { clipPath: 'inset(0 0% 0 0)', opacity: 1, duration: 0.65 })
-        .to('.about-tl-heading', { y: 0, opacity: 1, clipPath: 'inset(0 0 0% 0)', duration: 0.8 }, '-=0.35');
-
-      // Connector segments draw + events stagger
-      gsap.to('.about-tl-connector', {
-        scaleX: 1, duration: 1.4, ease: 'power2.out',
-        scrollTrigger: { trigger: '.about-tl-list', start: 'top 75%', once: true },
-      });
-      gsap.to('.about-tl-dot', {
-        scale: 1, duration: 0.45, stagger: 0.18, ease: 'back.out(2)',
-        scrollTrigger: { trigger: '.about-tl-list', start: 'top 75%', once: true },
-        delay: 0.2,
-      });
-      gsap.to('.about-tl-event', {
-        y: 0, opacity: 1, duration: 0.7, stagger: 0.18, ease: 'power3.out',
-        scrollTrigger: { trigger: '.about-tl-list', start: 'top 75%', once: true },
-        delay: 0.2,
-      });
-    }, rootRef);
-
-    return () => ctx.revert();
-  }, []);
+  useNkPageMotion(rootRef);
 
   return (
-    <div ref={rootRef} className="min-h-screen bg-stone-900 text-white">
-      <section className="container mx-auto px-6 py-20 md:py-28">
-        <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-[1fr_0.9fr] lg:gap-20">
-          <div className="max-w-2xl">
-            <span className="mb-5 block h-px w-16 bg-earth-400" aria-hidden="true" />
-            <h1 className="font-display text-4xl font-semibold leading-tight text-white md:text-6xl">
-              About Onekey
-            </h1>
-            <p className="mt-8 text-lg font-light leading-8 text-stone-300 md:text-xl md:leading-9">
-              OneKey was founded on the belief that music has the power to heal,
-              connect, and inspire. Our student volunteers dedicate their time and
-              talent to bring joy to senior communities, fostering intergenerational
-              bonds that enrich lives on both sides.
+    <div ref={rootRef} className="nk-page nk-grain">
+      <NkGlyphs />
+
+      {/* intro */}
+      <div className="px-6 pt-10 text-left md:px-16 md:pt-16 md:text-center" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="inline-flex items-center" style={{ gap: 14 }}>
+          <span className="w-7 md:w-11" style={{ height: 1, background: 'var(--nk-blue)' }} />
+          <span className="text-[10px] md:text-xs" style={{ letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--nk-royal)' }}>
+            Who we are · est. 2020
+          </span>
+          <span className="hidden w-11 md:inline-block" style={{ height: 1, background: 'var(--nk-blue)' }} />
+        </div>
+        <div
+          className="text-[44px] md:text-[76px]"
+          style={{ fontFamily: 'var(--nk-serif)', fontWeight: 500, lineHeight: 1.05, letterSpacing: '-0.01em', marginTop: 18, paddingBottom: '0.08em' }}
+        >
+          About <span style={{ fontStyle: 'italic', color: 'var(--nk-royal)' }}>us.</span>
+        </div>
+        <p className="md:mx-auto" style={{ fontSize: 16, lineHeight: 1.85, margin: '20px 0 0', maxWidth: '62ch', color: 'var(--nk-ink-90)' }}>
+          OneKey is a student-run volunteer organization from Richmond, BC. Since 2020 we've been doing two things side by side — and we
+          care about both equally.
+        </p>
+        <div className="hidden md:block" style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 17, color: 'var(--nk-ink-72)', marginTop: 22 }}>
+          here's what that looks like —
+        </div>
+      </div>
+
+      {/* opening: photo-led diptych (desktop) — slots awaiting photos */}
+      <div
+        className="mt-11 hidden grid-cols-2 md:grid"
+        style={{ borderBottom: '1px solid var(--nk-line-20)', borderTop: '1px solid var(--nk-line-20)', position: 'relative', zIndex: 1 }}
+      >
+        <figure style={{ margin: 0, borderRight: '1px solid var(--nk-line-20)', padding: '40px 40px 32px 64px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
+            <span style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 36, color: 'var(--nk-accent)' }}>I.</span>
+            <span style={{ fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--nk-ink-85)' }}>Music — real stages, real audiences</span>
+          </div>
+          <NkPhotoSlot ratio="4/5" />
+          <figcaption style={{ fontSize: 12, color: 'var(--nk-ink-72)' }}>Music · photo to come</figcaption>
+        </figure>
+        <figure style={{ margin: 0, padding: '40px 64px 32px 40px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
+            <span style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 36, color: 'var(--nk-accent)' }}>II.</span>
+            <span style={{ fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--nk-ink-85)' }}>Homework help — every week</span>
+          </div>
+          <NkPhotoSlot ratio="4/5" />
+          <figcaption style={{ fontSize: 12, color: 'var(--nk-ink-72)' }}>Homework help · photo to come</figcaption>
+        </figure>
+      </div>
+
+      {/* opening photo slots (phone) */}
+      <div className="flex gap-3 px-6 pt-2 md:hidden" style={{ position: 'relative', zIndex: 1 }}>
+        <NkPhotoSlot ratio="3/4" style={{ flex: 1, minWidth: 0 }} />
+        <NkPhotoSlot ratio="3/4" style={{ flex: 1, minWidth: 0, marginTop: 24 }} />
+      </div>
+
+      {/* the statement */}
+      <div className="nk-fade grid grid-cols-1 gap-6 px-6 pt-8 md:grid-cols-[1fr_300px] md:gap-16 md:px-16 md:pt-16" style={{ alignItems: 'end', position: 'relative', zIndex: 1 }}>
+        <div
+          className="text-[21px] leading-[1.6] md:text-[40px] md:leading-[1.42]"
+          style={{ fontFamily: 'var(--nk-serif)', fontWeight: 500, letterSpacing: '-0.01em' }}
+        >
+          OneKey does two things, and we care about both equally. One is{' '}
+          <span style={{ fontStyle: 'italic', color: 'var(--nk-royal)' }}>music</span>: young players get real stage time at senior homes, in
+          front of audiences who love to listen. The other is{' '}
+          <span style={{ fontStyle: 'italic', color: 'var(--nk-royal)' }}>homework help</span>: our volunteers sit down with younger students
+          and help them keep up.
+        </div>
+        <div style={{ fontSize: 13, lineHeight: 1.8, color: 'var(--nk-ink-78)', borderLeft: '1px solid var(--nk-line-20)', paddingLeft: 20 }}>
+          Founded 2020 by Curtis Wei, Jack Wang, Grace Xu and Eliza Sun · working out of the C&amp;K Music School studio, Richmond.
+        </div>
+      </div>
+
+      {/* our story — desktop strip */}
+      <div className="nk-fade mx-6 mt-10 hidden md:mx-16 md:mt-20 md:block" style={{ borderTop: '1px solid var(--nk-line-20)', paddingTop: 44, position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 36 }}>
+          <span style={eyebrow}>Our story</span>
+        </div>
+        <div style={{ display: 'flex' }}>
+          {STORY.map(s => (
+            <div key={s.title} style={s.last ? { width: 220, display: 'flex', flexDirection: 'column', gap: 12 } : { flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span
+                  style={
+                    s.filled
+                      ? { width: 10, height: 10, borderRadius: '50%', background: 'var(--nk-accent)', flex: 'none', boxShadow: '0 0 0 5px rgba(124,92,255,0.15)' }
+                      : { width: 10, height: 10, borderRadius: '50%', border: '1.5px solid var(--nk-accent)', background: '#ffffff', flex: 'none' }
+                  }
+                />
+                {!s.last && <span style={{ flex: 1, height: 1, background: 'var(--nk-line-17)' }} />}
+              </div>
+              <div style={{ paddingRight: s.last ? 0 : 24 }}>
+                <div style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 15, color: 'var(--nk-accent-400)', fontVariantNumeric: 'tabular-nums' }}>{s.year}</div>
+                <div style={{ fontFamily: 'var(--nk-serif)', fontSize: 20, fontWeight: 700, lineHeight: 1.2 }}>{s.title}</div>
+                <div style={{ fontSize: 13, color: 'var(--nk-ink-78)', lineHeight: 1.65, marginTop: 4 }}>{s.body}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* our story — phone grid */}
+      <div className="px-6 pt-10 md:hidden" style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--nk-accent-400)', marginBottom: 18 }}>Our story</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px 16px' }}>
+          {[
+            { year: '2020', title: 'OneKey is founded', lead: true },
+            { year: '2020', title: 'National recognition' },
+            { year: '2021', title: 'Homework help is founded' },
+            { year: '2022', title: 'Performances expand · Vanstring joins' },
+          ].map(s => (
+            <div key={s.title} style={{ borderTop: s.lead ? '2px solid var(--nk-accent)' : '1px solid rgba(59,52,95,0.19)', paddingTop: 10 }}>
+              <div style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 14, color: 'var(--nk-royal)' }}>{s.year}</div>
+              <div style={{ fontFamily: 'var(--nk-serif)', fontSize: 17, fontWeight: 700, lineHeight: 1.2 }}>{s.title}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* recognition */}
+      <div className="mx-6 mt-10 md:mx-16 md:mt-20" style={{ borderRadius: 18, border: '1px solid var(--nk-line-20)', position: 'relative', overflow: 'hidden', zIndex: 1 }}>
+        <div
+          className="hidden md:block"
+          style={{ position: 'absolute', right: 44, bottom: -30, fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 220, color: 'rgba(59,116,232,0.1)', lineHeight: 1, pointerEvents: 'none' }}
+        >
+          2020
+        </div>
+        <div className="nk-fade grid grid-cols-1 gap-8 p-6 md:grid-cols-[1fr_1.1fr] md:gap-14 md:px-14 md:py-16" style={{ alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <span style={{ fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--nk-royal)' }}>Recognition</span>
+            <div className="text-[30px] md:text-[46px]" style={{ fontFamily: 'var(--nk-serif)', fontWeight: 500, lineHeight: 1.1 }}>
+              Honoured on the <span style={{ fontStyle: 'italic', color: 'var(--nk-royal)' }}>national stage.</span>
+            </div>
+            <p style={{ fontSize: 14, lineHeight: 1.85, margin: 0, color: 'var(--nk-ink-90)', textAlign: 'justify' }}>
+              In 2020 — the same year OneKey was founded — its four co-founders received the Youth Role Model award in the public-welfare
+              category (青春榜样公益类), recognized by CCTV and the Greater Vancouver Parents Association. Vanstring was honoured at the same
+              ceremony: the stage screen read "Van Key · Van String · Charlie Gao."
             </p>
-          </div>
-
-          <div className="relative">
-            <div className="aspect-[3/4] w-full overflow-hidden rounded-2xl border border-earth-300/20 bg-stone-800/60 p-3 shadow-2xl shadow-black/20 transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] hover:border-earth-300/60 hover:shadow-earth-900/30 sm:aspect-[4/5] lg:aspect-[3/4]">
-              <div className="h-full overflow-hidden rounded-xl border border-white/10 bg-stone-900/45">
-                <img
-                  src={`${process.env.PUBLIC_URL}/pics/onekey_cavell.jpg`}
-                  alt="OneKey student musicians visiting Cavell Gardens to perform for seniors"
-                  className="h-full w-full object-cover object-center"
-                />
+            <div style={{ display: 'flex', gap: 36, marginTop: 6 }}>
+              <div style={{ borderTop: '2px solid var(--nk-blue)', paddingTop: 12 }}>
+                <div style={{ fontFamily: 'var(--nk-serif)', fontSize: 38, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>2020</div>
+                <div style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nk-ink-85)', marginTop: 6 }}>Youth Role Model award</div>
+              </div>
+              <div style={{ borderTop: '1px solid rgba(59,52,95,0.19)', paddingTop: 12 }}>
+                <div style={{ fontFamily: 'var(--nk-serif)', fontSize: 38, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>4</div>
+                <div style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nk-ink-85)', marginTop: 6 }}>Co-founders on stage</div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* ── Timeline ───────────────────────────────────────────────── */}
-        <div className="about-tl-section mx-auto mt-20 max-w-3xl lg:mt-24">
-          <p className="about-tl-eyebrow inline-block text-xs font-bold uppercase tracking-[0.18em] text-earth-300">
-            Our Story
-          </p>
-          <h2 className="about-tl-heading mt-4 font-display text-3xl font-semibold text-white md:text-5xl">
-            How OneKey began
-          </h2>
-
-          <div className="about-tl-list relative mt-14">
-            <ol className="relative grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-4 md:gap-x-8">
-              {TIMELINE_EVENTS.map((e, i) => (
-                <li
-                  key={`${e.year}-${i}`}
-                  className="about-tl-event relative"
-                >
-                  {i < TIMELINE_EVENTS.length - 1 && (
-                    <span
-                      aria-hidden="true"
-                      className={`about-tl-connector absolute left-2 top-[7px] z-0 h-px w-[calc(100%+1.5rem)] bg-gradient-to-r from-earth-400/55 to-earth-400/15 md:left-2.5 md:top-[9px] md:w-[calc(100%+2rem)] ${i % 2 === 0 ? 'block' : 'hidden md:block'}`}
-                    />
-                  )}
-                  {/* Dot sits on the spine */}
-                  <span
-                    aria-hidden="true"
-                    className="about-tl-dot relative z-10 block h-4 w-4 rounded-full border-2 border-earth-400 bg-stone-900 md:h-5 md:w-5"
-                  />
-                  <div className="mt-4 font-display text-sm font-bold tracking-wider text-earth-300 md:text-base">
-                    {e.year}
-                  </div>
-                  <h3 className="mt-1 font-display text-base font-semibold text-white md:text-lg">
-                    {e.title}
-                  </h3>
-                  <p className="mt-2 text-sm font-light leading-6 text-stone-300/85">
-                    {e.description}
-                  </p>
-                </li>
-              ))}
-            </ol>
+          <div className="flex flex-col gap-5 md:flex-row md:items-start">
+            <figure style={{ flex: 1.1, margin: 0, background: '#f1effa', border: '1px solid var(--nk-line-17)', padding: 14, borderRadius: 14 }}>
+              <NkPhotoSlot ratio="1290/1233" style={{ borderRadius: 4 }} />
+              <figcaption style={{ fontSize: 12, marginTop: 10, color: 'var(--nk-ink-78)' }}>Award photo · to come</figcaption>
+            </figure>
+            <figure className="md:mt-11" style={{ flex: 1, margin: 0, background: '#f1effa', border: '1px solid var(--nk-line-17)', padding: 14, borderRadius: 14 }}>
+              <NkPhotoSlot ratio="2400/1080" style={{ borderRadius: 4 }} />
+              <figcaption style={{ fontSize: 12, marginTop: 10, color: 'var(--nk-ink-78)' }}>Ceremony photo · to come</figcaption>
+            </figure>
           </div>
         </div>
+      </div>
 
-        {/* ── Team / History cards ───────────────────────────────────── */}
-        <div className="mx-auto mt-20 grid max-w-6xl gap-8 md:grid-cols-2 lg:mt-24">
-          <Link
-            to="/team"
-            className="cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-stone-800/45 shadow-xl shadow-black/10 transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] hover:border-earth-300/35 hover:bg-stone-800/70 hover:shadow-2xl hover:shadow-black/25"
-          >
-            <div className="aspect-[16/9] border-b border-earth-300/20 bg-stone-900/55 p-3 transition-all duration-300 ease-out hover:border-earth-300/45 hover:bg-stone-900/75">
-              <div className="h-full overflow-hidden rounded-xl border border-white/10 bg-stone-900/45">
-                <img
-                  src={`${process.env.PUBLIC_URL}/pics/onekey_cellos.jpg`}
-                  alt="OneKey student musicians gathered with their cello cases"
-                  className="h-full w-full object-cover object-center"
-                />
-              </div>
+      {/* link cards */}
+      <div className="nk-fade mx-6 mb-11 mt-9 grid grid-cols-1 gap-4 md:mx-16 md:mb-[72px] md:mt-[72px] md:grid-cols-2 md:gap-6" style={{ position: 'relative', zIndex: 1 }}>
+        <Link
+          to="/team"
+          className="flex flex-col gap-3 p-5 md:flex-row md:items-center md:gap-[22px] md:p-6"
+          style={{ borderRadius: 16, border: '1px solid var(--nk-line-17)', background: 'var(--nk-panel)', color: 'inherit' }}
+        >
+          <div className="w-full md:w-[230px]" style={{ flex: 'none' }}><NkPhotoSlot ratio="3/2" /></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="text-[22px] md:text-[29px]" style={{ fontFamily: 'var(--nk-serif)', fontWeight: 500 }}>
+              Our <span style={{ fontStyle: 'italic', color: 'var(--nk-royal)' }}>team</span>
             </div>
-            <div className="p-8 md:p-10">
-              <h2 className="font-display text-2xl font-semibold text-white">
-                Our Team
-              </h2>
-              <p className="mt-4 text-base font-light leading-7 text-stone-300">
-                Meet the students who support our mission and help us reach new heights.
-              </p>
+            <div className="hidden md:block" style={{ fontSize: 14, color: 'var(--nk-ink-85)', lineHeight: 1.65 }}>Twenty-four students across seven sections.</div>
+            <span style={{ fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nk-accent-400)', marginTop: 4 }}>Meet the ensemble →</span>
+          </div>
+        </Link>
+        <Link
+          to="/timeline"
+          className="flex flex-col gap-3 p-5 md:flex-row md:items-center md:gap-[22px] md:p-6"
+          style={{ borderRadius: 16, border: '1px solid var(--nk-line-17)', background: 'var(--nk-panel)', color: 'inherit' }}
+        >
+          <div className="w-full md:w-[230px]" style={{ flex: 'none' }}><NkPhotoSlot ratio="3/2" /></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="text-[22px] md:text-[29px]" style={{ fontFamily: 'var(--nk-serif)', fontWeight: 500 }}>
+              Our <span style={{ fontStyle: 'italic', color: 'var(--nk-royal)' }}>history</span>
             </div>
-          </Link>
-
-          <Link
-            to="/timeline"
-            className="cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-stone-800/45 shadow-xl shadow-black/10 transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] hover:border-earth-300/35 hover:bg-stone-800/70 hover:shadow-2xl hover:shadow-black/25"
-          >
-            <div className="aspect-[16/9] border-b border-earth-300/20 bg-stone-900/55 p-3 transition-all duration-300 ease-out hover:border-earth-300/45 hover:bg-stone-900/75">
-              <div className="h-full overflow-hidden rounded-xl border border-white/10 bg-stone-900/45">
-                <img
-                  src={`${process.env.PUBLIC_URL}/pics/onekey_history.jpg`}
-                  alt="OneKey musicians performing in a senior community space"
-                  className="h-full w-full object-cover object-center"
-                />
-              </div>
-            </div>
-            <div className="p-8 md:p-10">
-              <h2 className="font-display text-2xl font-semibold text-white">
-                Our History
-              </h2>
-              <p className="mt-4 text-base font-light leading-7 text-stone-300">
-                Each part of our history is a testament to our dedication to spread the joy of music. Learn more here.
-              </p>
-            </div>
-          </Link>
-        </div>
-      </section>
+            <div className="hidden md:block" style={{ fontSize: 14, color: 'var(--nk-ink-85)', lineHeight: 1.65 }}>Six years of performances, tutoring and giving.</div>
+            <span style={{ fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nk-accent-400)', marginTop: 4 }}>View the chronicle →</span>
+          </div>
+        </Link>
+      </div>
     </div>
   );
 };

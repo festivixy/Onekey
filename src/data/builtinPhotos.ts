@@ -1,5 +1,7 @@
 import { PhotoCategory } from '../services/firebaseService';
 
+import { photoUrl as P } from '../utils/photoUrl';
+
 // Hardcoded photos shipped with the codebase, shown read-only in the admin Photo Manager
 // so the admin can see what's already wired into the site alongside uploaded photos.
 export interface BuiltinPhoto {
@@ -7,8 +9,6 @@ export interface BuiltinPhoto {
   category: PhotoCategory;
   label: string;
 }
-
-const P = (path: string) => `${process.env.PUBLIC_URL}${path}`;
 
 export const BUILTIN_PHOTOS: BuiltinPhoto[] = [
   // OneKey

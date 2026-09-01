@@ -14,6 +14,7 @@ import Fundraisers from './pages/Fundraisers';
 import VancouverAquarium from './pages/VancouverAquarium';
 import VTC from './pages/VTC';
 import NotFound from './pages/NotFound';
+import Highlights from './pages/Highlights';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -35,6 +36,7 @@ function AnimatedRoutes() {
           <Route path="/fundraisers/vancouver-aquarium" element={<VancouverAquarium />} />
           <Route path="/vtc"        element={<VTC />} />
           <Route path="/vanstring"  element={<VanstringHome />} />
+          <Route path="/highlights" element={<Highlights />} />
           <Route path="/admin"     element={<AdminDashboard />} />
           <Route path="*"          element={<NotFound />} />
         </Routes>
