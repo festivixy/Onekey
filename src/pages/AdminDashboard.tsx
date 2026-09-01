@@ -8,7 +8,7 @@ import TeamPhotoField from '../components/Admin/TeamPhotoField';
 import AdminTerminal from '../components/Admin/AdminTerminal';
 import VanstringRoster from '../components/Admin/VanstringRoster';
 import PhotoManager from '../components/Admin/PhotoManager';
-import { resolveTeamImageSrc } from '../utils/teamImageUrl';
+import TeamEditor from '../components/Admin/TeamEditor';
 
 const AdminDashboard: React.FC = () => {
   const {
@@ -35,9 +35,9 @@ const AdminDashboard: React.FC = () => {
     fetchEvents,
     isLoading: timelineLoading
   } = useTimelineStore();
-  const { teamMembers, addTeamMember, updateTeamMember, removeTeamMember, fetchTeamMembers } = useTeamStore();
+  const { addTeamMember, updateTeamMember, fetchTeamMembers } = useTeamStore();
   
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => new URLSearchParams(window.location.search).get('tab') ?? 'overview');
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [showCreateEventModal, setShowCreateEventModal] = useState(false);
   const [showEditEventModal, setShowEditEventModal] = useState(false);
@@ -50,7 +50,6 @@ const AdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [teamSortBy, setTeamSortBy] = useState('name-asc');
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [newUserData, setNewUserData] = useState({
     username: '',
@@ -437,22 +436,6 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleEditTeamMember = (member: TeamMember) => {
-    setEditingTeamMember(member);
-    setNewTeamData({
-      name: member.name,
-      role: member.role,
-      school: member.school,
-      bio: member.bio,
-      instagram: member.instagram,
-      image: member.image,
-      sections: member.sections ?? [],
-      group: member.group,
-      concertmasterType: member.concertmasterType,
-    });
-    setShowEditTeamModal(true);
-  };
-
   const handleUpdateTeamMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingTeamMember) return;
@@ -469,12 +452,6 @@ const AdminDashboard: React.FC = () => {
       setNewTeamData({ name: '', role: '', school: '', bio: '', instagram: '', image: '', sections: [], group: undefined, concertmasterType: undefined });
     } catch (error) {
       alert('Failed to update team member');
-    }
-  };
-
-  const handleDeleteTeamMember = async (memberId: string) => {
-    if (window.confirm('Are you sure you want to delete this team member?')) {
-      await removeTeamMember(memberId);
     }
   };
 
@@ -811,146 +788,7 @@ const AdminDashboard: React.FC = () => {
           )}
 
           {/* Team Management Tab */}
-          {activeTab === 'team' && (
-            <>
-              <div className="content-header">
-                <h2 className="content-title">Team Management</h2>
-                <div className="content-actions">
-                  <button 
-                    className="btn btn-primary"
-                    onClick={() => setShowCreateTeamModal(true)}
-                  >
-                    <i className="fas fa-plus"></i>
-                    Add Team Member
-                  </button>
-                </div>
-              </div>
-
-              <div className="search-bar">
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Search team members..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <select
-                  className="filter-select"
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value)}
-                >
-                  <option value="all">All Sections</option>
-                  <option value="founders">Founders</option>
-                  <option value="leadership">Leadership</option>
-                  <option value="communications">Communications</option>
-                  <option value="coordinators">Coordinators</option>
-                  <option value="finance">Financial Managers</option>
-                  <option value="concertmasters">Concertmasters</option>
-                  <option value="techdesign">Tech & Design</option>
-                  <option value="alumni">Alumni</option>
-                </select>
-                <select
-                  className="filter-select"
-                  value={teamSortBy}
-                  onChange={(e) => setTeamSortBy(e.target.value)}
-                >
-                  <option value="name-asc">Name A→Z</option>
-                  <option value="name-desc">Name Z→A</option>
-                  <option value="section">Section</option>
-                </select>
-              </div>
-
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Photo</th>
-                    <th>Name</th>
-                    <th>Role</th>
-                    <th>School</th>
-                    <th>Section</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {teamMembers
-                    .filter(member => {
-                      const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                           member.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                           member.school.toLowerCase().includes(searchTerm.toLowerCase());
-                      const matchesSection = roleFilter === 'all' || (member.sections ?? []).includes(roleFilter as TeamMember['sections'][number]);
-                      return matchesSearch && matchesSection;
-                    })
-                    .sort((a, b) => {
-                      if (teamSortBy === 'name-asc') return a.name.localeCompare(b.name);
-                      if (teamSortBy === 'name-desc') return b.name.localeCompare(a.name);
-                      if (teamSortBy === 'section') return (a.sections?.[0] ?? '').localeCompare(b.sections?.[0] ?? '') || a.name.localeCompare(b.name);
-                      return 0;
-                    })
-                    .map((member) => (
-                    <tr key={member.id}>
-                      <td>
-                        {resolveTeamImageSrc(member.image) ? (
-                          <img
-                            src={resolveTeamImageSrc(member.image) ?? ''}
-                            alt={member.name}
-                            className="member-thumb"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          <div className="member-thumb-fallback">
-                            {member.name.charAt(0)}
-                          </div>
-                        )}
-                      </td>
-                      <td>
-                        <div>
-                          <strong>{member.name}</strong>
-                          <div className="text-muted">{member.bio.substring(0, 50)}...</div>
-                        </div>
-                      </td>
-                      <td>{member.role}</td>
-                      <td>{member.school}</td>
-                      <td>
-                        <span className={`role-badge`}>
-                          {(member.sections ?? []).join(', ') || '—'}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`status-badge ${member.isActive ? 'active' : 'inactive'}`}>
-                          {member.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="content-actions">
-                          <button
-                            className="btn btn-sm btn-ghost"
-                            onClick={() => handleEditTeamMember(member)}
-                          >
-                            <i className="fas fa-edit"></i> Edit
-                          </button>
-                          <button
-                            className={`btn btn-sm ${member.isActive ? 'btn-warning' : 'btn-success'}`}
-                            onClick={() => updateTeamMember(member.id, { isActive: !member.isActive })}
-                          >
-                            {member.isActive ? 'Hide' : 'Show'}
-                          </button>
-                          <button
-                            className="btn btn-sm btn-danger"
-                            onClick={() => handleDeleteTeamMember(member.id)}
-                          >
-                            <i className="fas fa-trash"></i> Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          )}
+          {activeTab === 'team' && <TeamEditor />}
 
           {/* Timeline Management Tab */}
           {activeTab === 'timeline' && (
