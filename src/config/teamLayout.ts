@@ -30,7 +30,7 @@ export const DEFAULT_SECTION_LAYOUT: SectionLayout = {
 
 export const DEFAULT_TEAM_LAYOUT: TeamLayout = {
   order: ALL_SECTIONS,
-  hidden: ['alumni'],
+  hidden: ['alumni', 'finance', 'concertmasters'],
   sections: {},
   intro: '',
   ctaText: 'Take your seat',
