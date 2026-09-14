@@ -1,4 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { usePhotoStore } from '../store/photoStore';
+import { SitePhoto } from '../components/nocturne/SitePhoto';
 import { photoUrl as P } from '../utils/photoUrl';
 import { useNkPageMotion } from '../components/nocturne/motion';
 
@@ -7,6 +9,9 @@ import { useNkPageMotion } from '../components/nocturne/motion';
 const VancouverAquarium: React.FC = () => {
   const rootRef = useRef<HTMLDivElement>(null);
   useNkPageMotion(rootRef);
+  const fetchPhotos = usePhotoStore(st => st.fetchPhotos);
+  const uploaded = usePhotoStore(st => st.photos.filter(p => p.category === 'vancouver-aquarium'));
+  useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
 
   return (
     <div ref={rootRef} className="nk-page nk-grain">
@@ -40,10 +45,11 @@ const VancouverAquarium: React.FC = () => {
         {/* phone-framed screenshot as document */}
         <figure className="nk-fade justify-self-center" style={{ margin: 0 }}>
           <div style={{ width: 300, border: '1px solid var(--nk-line-20)', borderRadius: 34, padding: 12, background: '#f1effa', boxShadow: '0 24px 60px rgba(90,80,180,0.16)' }}>
-            <img
-              src={P('/pics/aquarium-fundraiser.jpg')}
+            <SitePhoto
+              slot="aqua-screenshot"
+              fallback={P('/pics/aquarium-fundraiser.jpg')}
               alt="An earlier snapshot of the CanadaHelps campaign page, with a sea otter"
-              style={{ width: '100%', aspectRatio: '1080/2338', objectFit: 'cover', objectPosition: 'top', borderRadius: 22, display: 'block', background: '#fff' }}
+              style={{ aspectRatio: '1080/2338', objectFit: 'cover', objectPosition: 'top', borderRadius: 22, display: 'block', background: '#fff' }}
             />
           </div>
           <figcaption style={{ fontSize: 12, marginTop: 12, color: 'var(--nk-ink-72)', textAlign: 'center' }}>The campaign page, kept as evidence</figcaption>
@@ -61,8 +67,11 @@ const VancouverAquarium: React.FC = () => {
           </span>
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <img className="nk-plate" src={P('/pics/kidsconcert.JPG')} alt="Young singers in white dresses at a studio concert" loading="lazy" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />
-          <img className="nk-plate" src={P('/pics/decconcert.JPG')} alt="A December studio concert with certificates and balloons" loading="lazy" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />
+          <SitePhoto slot="aqua-studio-1" fallback={P('/pics/kidsconcert.JPG')} alt="Young singers in white dresses at a studio concert" loading="lazy" className="nk-plate" style={{ aspectRatio: '16/9', objectFit: 'cover' }} />
+          <SitePhoto slot="aqua-studio-2" fallback={P('/pics/decconcert.JPG')} alt="A December studio concert with certificates and balloons" loading="lazy" className="nk-plate" style={{ aspectRatio: '16/9', objectFit: 'cover' }} />
+          {uploaded.map(p => (
+            <img key={p.id} className="nk-plate" src={p.url} alt={p.filename} loading="lazy" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />
+          ))}
         </div>
       </div>
     </div>

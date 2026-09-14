@@ -1,9 +1,14 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { usePhotoStore } from '../store/photoStore';
 import { useNkPageMotion } from '../components/nocturne/motion';
+import { SitePhoto } from '../components/nocturne/SitePhoto';
 
 const VTC: React.FC = () => {
   const rootRef = useRef<HTMLDivElement>(null);
   useNkPageMotion(rootRef);
+  const fetchPhotos = usePhotoStore(st => st.fetchPhotos);
+  const uploaded = usePhotoStore(st => st.photos.filter(p => p.category === 'vtc'));
+  useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
 
   return (
     <div ref={rootRef} className="nk-page nk-grain">
@@ -28,15 +33,8 @@ const VTC: React.FC = () => {
         </p>
       </div>
 
-      <div
-        className="nk-fade mx-6 md:ml-32 md:mr-0"
-        style={{ marginTop: 44, height: 'clamp(240px, 30vw, 420px)', border: '1px dashed rgba(59,52,95,0.18)', background: 'var(--nk-well)', display: 'grid', placeItems: 'center' }}
-      >
-        <div style={{ textAlign: 'center', color: 'rgba(43,39,64,0.62)', fontSize: 13, lineHeight: 1.8, padding: '0 20px' }}>
-          Photographs from the program will appear here
-          <br />
-          <span style={{ fontStyle: 'italic', color: 'rgba(43,39,64,0.55)' }}>check back soon</span>
-        </div>
+      <div className="nk-fade mx-6 md:ml-32 md:mr-0" style={{ marginTop: 44 }}>
+        <SitePhoto slot="vtc-hero" alt="Voluntary Teaching for China" ratio="16/6" className="nk-plate" placeholderLabel="hero photo — to come" style={{ objectFit: 'cover' }} />
       </div>
 
       <div className="nk-fade px-6 pt-12 text-center md:px-16 md:pt-20">
@@ -56,11 +54,15 @@ const VTC: React.FC = () => {
           <span style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 16, color: 'var(--nk-ink-78)' }}>awaiting photographs</span>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {[0, 1, 2].map(i => (
-            <div key={i} style={{ aspectRatio: '4/3', border: '1px dashed rgba(59,52,95,0.18)', background: 'var(--nk-well)', display: 'grid', placeItems: 'center' }}>
-              <span style={{ fontSize: 12, color: 'rgba(43,39,64,0.55)', fontStyle: 'italic' }}>photo slot</span>
-            </div>
-          ))}
+          {uploaded.length > 0
+            ? uploaded.map(p => (
+                <img key={p.id} className="nk-plate" src={p.url} alt={p.filename} loading="lazy" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover' }} />
+              ))
+            : [0, 1, 2].map(i => (
+                <div key={i} style={{ aspectRatio: '4/3', border: '1px dashed rgba(59,52,95,0.18)', background: 'var(--nk-well)', display: 'grid', placeItems: 'center' }}>
+                  <span style={{ fontSize: 12, color: 'rgba(43,39,64,0.55)', fontStyle: 'italic' }}>photo slot — upload via Admin → Photo Manager → Voluntary Teaching for China</span>
+                </div>
+              ))}
         </div>
       </div>
     </div>

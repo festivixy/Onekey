@@ -105,6 +105,15 @@ export class FirebaseService {
     return apiFetch<null>('/team-layout', { method: 'PUT', body: JSON.stringify({ layout }), headers: { 'content-type': 'application/json' } });
   }
 
+  // Site photo slots (admin-configurable, keyed by slot name)
+  async getSitePhotos(): Promise<ApiResponse<{ photos: Record<string, string> }>> {
+    return apiFetch<{ photos: Record<string, string> }>('/site-photos');
+  }
+
+  async updateSitePhotos(photos: Record<string, string>): Promise<ApiResponse<null>> {
+    return apiFetch<null>('/site-photos', { method: 'PUT', body: JSON.stringify({ photos }), headers: { 'content-type': 'application/json' } });
+  }
+
   // Team Members
   async getTeamMembers(): Promise<ApiResponse<{ members: Record<string, unknown>[] }>> {
     return apiFetch<{ members: Record<string, unknown>[] }>('/team');

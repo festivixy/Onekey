@@ -37,3 +37,25 @@ test('PUT /api/team-layout rejects non-object layout', async () => {
   const res = await app.request('/api/team-layout', { method: 'PUT', headers: { 'content-type': 'application/json', cookie }, body: JSON.stringify({ layout: [1, 2] }) }, env)
   expect(res.status).toBe(400)
 })
+
+test('GET /api/site-photos returns empty map when unset', async () => {
+  const res = await app.request('/api/site-photos', {}, env)
+  expect((await res.json() as any).data.photos).toEqual({})
+})
+
+test('PUT /api/site-photos (admin) upserts and GET returns it', async () => {
+  const cookie = await adminCookie()
+  const photos = { 'home-hero-1': '/api/files/uploads/x.jpg' }
+  const put = await app.request('/api/site-photos', { method: 'PUT', headers: { 'content-type': 'application/json', cookie }, body: JSON.stringify({ photos }) }, env)
+  expect(put.status).toBe(200)
+  const get = await app.request('/api/site-photos', {}, env)
+  expect((await get.json() as any).data.photos).toEqual(photos)
+})
+
+test('PUT /api/site-photos rejects anonymous and bad shapes', async () => {
+  const anon = await app.request('/api/site-photos', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ photos: {} }) }, env)
+  expect(anon.status).toBe(401)
+  const cookie = await adminCookie()
+  const bad = await app.request('/api/site-photos', { method: 'PUT', headers: { 'content-type': 'application/json', cookie }, body: JSON.stringify({ photos: [1] }) }, env)
+  expect(bad.status).toBe(400)
+})

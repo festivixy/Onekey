@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { NkGlyphs, NkPhotoSlot, useNkPageMotion } from '../components/nocturne/motion';
+import { NkGlyphs, useNkPageMotion } from '../components/nocturne/motion';
+import { SitePhoto } from '../components/nocturne/SitePhoto';
 
 const STORY = [
   { year: '2020', title: 'OneKey is founded', body: 'Four co-founders start bringing student musicians to senior homes.', filled: true },
@@ -54,23 +55,23 @@ const About: React.FC = () => {
             <span style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 36, color: 'var(--nk-accent)' }}>I.</span>
             <span style={{ fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--nk-ink-85)' }}>Music — real stages, real audiences</span>
           </div>
-          <NkPhotoSlot ratio="4/5" />
-          <figcaption style={{ fontSize: 12, color: 'var(--nk-ink-72)' }}>Music · photo to come</figcaption>
+          <SitePhoto slot="about-pillar-music" alt="Music at a senior home" ratio="4/5" className="nk-plate" style={{ aspectRatio: '4/5', objectFit: 'cover' }} />
+          <figcaption style={{ fontSize: 12, color: 'var(--nk-ink-72)' }}>Music</figcaption>
         </figure>
         <figure style={{ margin: 0, padding: '40px 64px 32px 40px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
             <span style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 36, color: 'var(--nk-accent)' }}>II.</span>
             <span style={{ fontSize: 12, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--nk-ink-85)' }}>Homework help — every week</span>
           </div>
-          <NkPhotoSlot ratio="4/5" />
-          <figcaption style={{ fontSize: 12, color: 'var(--nk-ink-72)' }}>Homework help · photo to come</figcaption>
+          <SitePhoto slot="about-pillar-hwhelp" alt="Homework help at the studio" ratio="4/5" className="nk-plate" style={{ aspectRatio: '4/5', objectFit: 'cover' }} />
+          <figcaption style={{ fontSize: 12, color: 'var(--nk-ink-72)' }}>Homework help</figcaption>
         </figure>
       </div>
 
       {/* opening photo slots (phone) */}
       <div className="flex gap-3 px-6 pt-2 md:hidden" style={{ position: 'relative', zIndex: 1 }}>
-        <NkPhotoSlot ratio="3/4" style={{ flex: 1, minWidth: 0 }} />
-        <NkPhotoSlot ratio="3/4" style={{ flex: 1, minWidth: 0, marginTop: 24 }} />
+        <div style={{ flex: 1, minWidth: 0 }}><SitePhoto slot="about-pillar-music" alt="Music at a senior home" ratio="3/4" className="nk-plate" style={{ aspectRatio: '3/4', objectFit: 'cover' }} /></div>
+        <div style={{ flex: 1, minWidth: 0, marginTop: 24 }}><SitePhoto slot="about-pillar-hwhelp" alt="Homework help at the studio" ratio="3/4" className="nk-plate" style={{ aspectRatio: '3/4', objectFit: 'cover' }} /></div>
       </div>
 
       {/* the statement */}
@@ -168,11 +169,11 @@ const About: React.FC = () => {
           </div>
           <div className="flex flex-col gap-5 md:flex-row md:items-start">
             <figure style={{ flex: 1.1, margin: 0, background: '#f1effa', border: '1px solid var(--nk-line-17)', padding: 14, borderRadius: 14 }}>
-              <NkPhotoSlot ratio="1290/1233" style={{ borderRadius: 4 }} />
+              <SitePhoto slot="about-award-article" alt="The four founders with award certificates" ratio="1290/1233" style={{ borderRadius: 4, border: '1px solid var(--nk-line-20)' }} />
               <figcaption style={{ fontSize: 12, marginTop: 10, color: 'var(--nk-ink-78)' }}>Award photo · to come</figcaption>
             </figure>
             <figure className="md:mt-11" style={{ flex: 1, margin: 0, background: '#f1effa', border: '1px solid var(--nk-line-17)', padding: 14, borderRadius: 14 }}>
-              <NkPhotoSlot ratio="2400/1080" style={{ borderRadius: 4 }} />
+              <SitePhoto slot="about-award-stage" alt="OneKey and Vanstring on the ceremony stage" ratio="2400/1080" style={{ borderRadius: 4, border: '1px solid var(--nk-line-20)' }} />
               <figcaption style={{ fontSize: 12, marginTop: 10, color: 'var(--nk-ink-78)' }}>Ceremony photo · to come</figcaption>
             </figure>
           </div>
@@ -186,7 +187,7 @@ const About: React.FC = () => {
           className="flex flex-col gap-3 p-5 md:flex-row md:items-center md:gap-[22px] md:p-6"
           style={{ borderRadius: 16, border: '1px solid var(--nk-line-17)', background: 'var(--nk-panel)', color: 'inherit' }}
         >
-          <div className="w-full md:w-[230px]" style={{ flex: 'none' }}><NkPhotoSlot ratio="3/2" /></div>
+          <div className="w-full md:w-[230px]" style={{ flex: 'none' }}><SitePhoto slot="about-card-team" alt="The OneKey team" ratio="3/2" className="nk-plate" style={{ aspectRatio: '3/2', objectFit: 'cover' }} /></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div className="text-[22px] md:text-[29px]" style={{ fontFamily: 'var(--nk-serif)', fontWeight: 500 }}>
               Our <span style={{ fontStyle: 'italic', color: 'var(--nk-royal)' }}>team</span>
@@ -200,7 +201,7 @@ const About: React.FC = () => {
           className="flex flex-col gap-3 p-5 md:flex-row md:items-center md:gap-[22px] md:p-6"
           style={{ borderRadius: 16, border: '1px solid var(--nk-line-17)', background: 'var(--nk-panel)', color: 'inherit' }}
         >
-          <div className="w-full md:w-[230px]" style={{ flex: 'none' }}><NkPhotoSlot ratio="3/2" /></div>
+          <div className="w-full md:w-[230px]" style={{ flex: 'none' }}><SitePhoto slot="about-card-history" alt="OneKey performing" ratio="3/2" className="nk-plate" style={{ aspectRatio: '3/2', objectFit: 'cover' }} /></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div className="text-[22px] md:text-[29px]" style={{ fontFamily: 'var(--nk-serif)', fontWeight: 500 }}>
               Our <span style={{ fontStyle: 'italic', color: 'var(--nk-royal)' }}>history</span>

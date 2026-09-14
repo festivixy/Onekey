@@ -1,8 +1,11 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { photoUrl as P } from '../utils/photoUrl';
 import { Link } from 'react-router-dom';
 import { NkStaff, NkNote, NkMarquee, NkHeroSlideshow, useNkPageMotion } from '../components/nocturne/motion';
 import { getRandomPhotos } from '../data/photos';
+import { usePhotoStore } from '../store/photoStore';
+import { SitePhoto, useSitePhotos } from '../components/nocturne/SitePhoto';
+import { useAuthStore } from '../store/authStore';
 
 
 
@@ -78,7 +81,19 @@ const JOIN_MAILTO = 'mailto:on3keymusic@gmail.com?subject=Joining%20OneKey';
 const Home: React.FC = () => {
   const rootRef = useRef<HTMLDivElement>(null);
   useNkPageMotion(rootRef);
-  const archive = useMemo(() => getRandomPhotos(12), []);
+  const fetchPhotos = usePhotoStore(st => st.fetchPhotos);
+  const uploadedOnekey = usePhotoStore(st => st.photos.filter(p => p.category === 'onekey'));
+  useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
+  const photoMap = useSitePhotos(st => st.photos);
+  const fetchSitePhotos = useSitePhotos(st => st.fetch);
+  useEffect(() => { fetchSitePhotos(); }, [fetchSitePhotos]);
+  const { isAuthenticated, user, hasPermission } = useAuthStore();
+  const canEdit = !!(isAuthenticated && user && hasPermission('basic_admin'));
+  const heroSlides = HERO_SLIDES.map((sl, i) => ({ ...sl, src: photoMap['home-hero-' + (i + 1)] ?? sl.src }));
+  const archive = useMemo(() => {
+    const ups = uploadedOnekey.map(p => p.url).slice(0, 4);
+    return [...ups, ...getRandomPhotos(12 - ups.length)].slice(0, 12);
+  }, [uploadedOnekey]);
 
   return (
     <div ref={rootRef} className="nk-page nk-grain">
@@ -118,7 +133,17 @@ const Home: React.FC = () => {
 
       {/* hero plates */}
       <div className="nk-fade mx-6 md:ml-32 md:mr-0">
-        <NkHeroSlideshow slides={HERO_SLIDES} height="clamp(300px, 40vw, 580px)" margin="20px 0 0" />
+        <NkHeroSlideshow key={heroSlides.map(sl => sl.src).join('|')} slides={heroSlides} height="clamp(300px, 40vw, 580px)" margin="20px 0 0" />
+        {canEdit && (
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--nk-accent-300)' }}>Hero slides</span>
+            {HERO_SLIDES.map((sl, i) => (
+              <div key={i} style={{ width: 110 }}>
+                <SitePhoto slot={'home-hero-' + (i + 1)} fallback={sl.src} alt={sl.alt} style={{ aspectRatio: '16/10', objectFit: 'cover', borderRadius: 8 }} />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* programme contents */}
@@ -182,12 +207,13 @@ const Home: React.FC = () => {
                 color: 'inherit',
               }}
             >
-              <img
-                className="nk-plate"
-                src={pr.img}
+              <SitePhoto
+                slot={'home-program-' + (i + 1)}
+                fallback={pr.img}
                 alt={pr.alt}
+                className="nk-plate"
                 loading={i > 1 ? 'lazy' : undefined}
-                style={{ width: '100%', aspectRatio: '16/8', objectFit: 'cover', border: 'none', outline: 'none', borderRadius: 0 }}
+                style={{ aspectRatio: '16/8', objectFit: 'cover', border: 'none', outline: 'none', borderRadius: 0 }}
               />
               <div className="flex flex-col gap-2 p-5 md:gap-[10px] md:px-[30px] md:pb-[30px] md:pt-[26px]">
                 <div className="text-[23px] md:text-[31px]" style={{ fontFamily: 'var(--nk-serif)', fontWeight: 700, lineHeight: 1.1 }}>

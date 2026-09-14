@@ -1,6 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { photoUrl as P } from '../utils/photoUrl';
-import { NkHeroSlideshow, NkPhotoSlot, useNkPageMotion } from '../components/nocturne/motion';
+import { NkHeroSlideshow, useNkPageMotion } from '../components/nocturne/motion';
+import { usePhotoStore } from '../store/photoStore';
+import { SitePhoto, SlotEditor, useSitePhotos } from '../components/nocturne/SitePhoto';
+import { useAuthStore } from '../store/authStore';
 
 
 
@@ -15,21 +18,30 @@ const sectionHead = (title: string, subtitle: string) => (
 );
 
 const CERTIFICATES = [
-  { name: 'Curtis Wei', role: 'OneKey co-founder' },
-  { name: 'Jack Wang', role: 'OneKey co-founder' },
-  { name: 'Alex Zhang', role: 'Vanstring leader' },
+  { name: 'Curtis Wei', role: 'OneKey co-founder', slot: 'fund-cert-curtis' },
+  { name: 'Jack Wang', role: 'OneKey co-founder', slot: 'fund-cert-jack' },
+  { name: 'Alex Zhang', role: 'Vanstring leader', slot: 'fund-cert-alex' },
 ];
 
 const MOMENTS = [
-  { img: P('/pics/vanstring_member_1.jpg'), alt: 'Quartet performing for seniors in wheelchairs' },
-  { img: P('/pics/vanstring_member_2.jpg'), alt: 'String players in a senior-home lounge' },
-  { img: P('/pics/vanstring_team.jpg'), alt: 'Two cellists mid-performance' },
-  { img: P('/pics/donationbox.JPG'), alt: 'A young performer beside the donation box' },
+  { img: P('/pics/vanstring_member_1.jpg'), alt: 'Quartet performing for seniors in wheelchairs', slot: 'fund-moment-1' },
+  { img: P('/pics/vanstring_member_2.jpg'), alt: 'String players in a senior-home lounge', slot: 'fund-moment-2' },
+  { img: P('/pics/vanstring_team.jpg'), alt: 'Two cellists mid-performance', slot: 'fund-moment-3' },
+  { img: P('/pics/donationbox.JPG'), alt: 'A young performer beside the donation box', slot: 'fund-moment-4' },
 ];
 
 const Fundraisers: React.FC = () => {
   const rootRef = useRef<HTMLDivElement>(null);
   useNkPageMotion(rootRef);
+  const fetchPhotos = usePhotoStore(s => s.fetchPhotos);
+  const uploaded = usePhotoStore(s => s.photos.filter(p => p.category === 'richmond-hospital'));
+  useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
+  const photoMap = useSitePhotos(st => st.photos);
+  const fetchSitePhotos = useSitePhotos(st => st.fetch);
+  useEffect(() => { fetchSitePhotos(); }, [fetchSitePhotos]);
+  const { isAuthenticated, user, hasPermission } = useAuthStore();
+  const canEdit = !!(isAuthenticated && user && hasPermission('basic_admin'));
+  const heroSrc = photoMap['fund-hero'] ?? P('/pics/RHFcheck2025.jpg');
 
   return (
     <div ref={rootRef} className="nk-page nk-grain">
@@ -69,13 +81,15 @@ const Fundraisers: React.FC = () => {
       </div>
 
       {/* hero plate */}
-      <div className="nk-fade mx-6 md:ml-32 md:mr-0">
+      <div className="nk-fade mx-6 md:ml-32 md:mr-0" style={{ position: 'relative' }}>
         <NkHeroSlideshow
-          slides={[{ src: P('/pics/RHFcheck2025.jpg'), alt: 'Group with the 2025 cheque outside the hospital Main Entrance' }]}
+          key={heroSrc}
+          slides={[{ src: heroSrc, alt: 'Group with the 2025 cheque outside the hospital Main Entrance' }]}
           height="clamp(280px, 36vw, 520px)"
           margin="48px 0 0"
           showDots={false}
         />
+        {canEdit && <SlotEditor slot="fund-hero" hasOverride={!!photoMap['fund-hero']} />}
       </div>
 
       {/* about */}
@@ -106,7 +120,7 @@ const Fundraisers: React.FC = () => {
         {sectionHead('Cheque presentations', 'from the archive — more years to come')}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div style={{ borderRadius: 16, border: '1px solid rgba(124,92,255,0.4)', background: 'var(--nk-panel)', padding: 22, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <img className="nk-plate" src={P('/pics/RHFcheck2025.jpg')} alt="2025 cheque presentation outside the Main Entrance" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />
+            <SitePhoto slot="fund-cheque-2025" fallback={P('/pics/RHFcheck2025.jpg')} alt="2025 cheque presentation outside the Main Entrance" className="nk-plate" style={{ aspectRatio: '16/9', objectFit: 'cover' }} />
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
               <span style={{ fontFamily: 'var(--nk-serif)', fontSize: 40, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>$2,905</span>
               <span style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums', color: 'var(--nk-ink-85)' }}>2025</span>
@@ -117,7 +131,7 @@ const Fundraisers: React.FC = () => {
             <div style={{ fontSize: 13, color: 'var(--nk-ink-78)', lineHeight: 1.6 }}>Presented outside the Main Entrance, Milan Ilich Pavilion.</div>
           </div>
           <div style={{ borderRadius: 16, border: '1px solid var(--nk-line-17)', background: 'var(--nk-panel)', padding: 22, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <img className="nk-plate" src={P('/pics/RHFcheck.JPG')} alt="December 2023 cheque presentation at the Richmond Hospital Foundation wall" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />
+            <SitePhoto slot="fund-cheque-2023" fallback={P('/pics/RHFcheck.JPG')} alt="December 2023 cheque presentation at the Richmond Hospital Foundation wall" className="nk-plate" style={{ aspectRatio: '16/9', objectFit: 'cover' }} />
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
               <span style={{ fontFamily: 'var(--nk-serif)', fontSize: 40, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>$3,996.30</span>
               <span style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums', color: 'var(--nk-ink-85)' }}>Dec 27, 2023</span>
@@ -136,7 +150,7 @@ const Fundraisers: React.FC = () => {
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
           {CERTIFICATES.map(c => (
             <figure key={c.name} style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <NkPhotoSlot ratio="3/4" />
+              <SitePhoto slot={c.slot} alt={c.name} ratio="3/4" className="nk-plate" style={{ aspectRatio: '3/4', objectFit: 'cover' }} />
               <figcaption style={{ textAlign: 'center' }}>
                 <div style={{ fontFamily: 'var(--nk-serif)', fontSize: 21, fontWeight: 700 }}>{c.name}</div>
                 <div style={{ fontSize: 12, color: 'var(--nk-ink-78)' }}>{c.role}</div>
@@ -151,7 +165,10 @@ const Fundraisers: React.FC = () => {
         {sectionHead('Performance moments', 'on the ground at Richmond Hospital')}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {MOMENTS.map(m => (
-            <img key={m.img} className="nk-plate" src={m.img} alt={m.alt} loading="lazy" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover' }} />
+            <SitePhoto key={m.slot} slot={m.slot} fallback={m.img} alt={m.alt} loading="lazy" className="nk-plate" style={{ aspectRatio: '4/3', objectFit: 'cover' }} />
+          ))}
+          {uploaded.map(p => (
+            <img key={p.id} className="nk-plate" src={p.url} alt={p.filename} loading="lazy" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover' }} />
           ))}
         </div>
       </div>

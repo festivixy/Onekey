@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { photoUrl as P } from '../utils/photoUrl';
 import { useNkPageMotion } from '../components/nocturne/motion';
+import { SitePhoto } from '../components/nocturne/SitePhoto';
 
 
 
@@ -11,8 +12,8 @@ const groupHead = (title: string, subtitle: string) => (
   </div>
 );
 
-const plate = (src: string, alt: string, ratio: string, extra?: React.CSSProperties) => (
-  <img className="nk-plate" src={src} alt={alt} loading="lazy" style={{ width: '100%', height: '100%', aspectRatio: ratio, objectFit: 'cover', ...extra }} />
+const plate = (slot: string, src: string, alt: string, ratio: string, extra?: React.CSSProperties) => (
+  <SitePhoto slot={slot} fallback={src} alt={alt} loading="lazy" className="nk-plate" style={{ height: '100%', aspectRatio: ratio === 'auto' ? undefined : ratio, objectFit: 'cover', ...extra }} />
 );
 
 const Highlights: React.FC = () => {
@@ -42,15 +43,15 @@ const Highlights: React.FC = () => {
       <div className="nk-fade px-6 pt-12 md:px-16 md:pt-16">
         {groupHead('GOCAA festival', 'the timber-roof hall · certificates and octets')}
         <div className="hidden md:grid" style={{ gridTemplateColumns: 'repeat(6,1fr)', gridAutoRows: 88, gap: 14 }}>
-          <div style={{ gridColumn: 'span 4', gridRow: 'span 3' }}>{plate(P('/pics/zig.JPG'), 'Violinists lined across the timber-roof stage', 'auto')}</div>
-          <div style={{ gridColumn: 'span 2', gridRow: 'span 2' }}>{plate(P('/pics/gocaaoctet.JPG'), 'A string octet on the timber-roof stage', 'auto')}</div>
-          <div style={{ gridColumn: 'span 2', gridRow: 'span 1' }}>{plate(P('/pics/gocaacertif.JPG'), 'Certificates handed out on stage', 'auto')}</div>
+          <div style={{ gridColumn: 'span 4', gridRow: 'span 3' }}>{plate('hl-gocaa-wide', P('/pics/zig.JPG'), 'Violinists lined across the timber-roof stage', 'auto')}</div>
+          <div style={{ gridColumn: 'span 2', gridRow: 'span 2' }}>{plate('hl-gocaa-octet', P('/pics/gocaaoctet.JPG'), 'A string octet on the timber-roof stage', 'auto')}</div>
+          <div style={{ gridColumn: 'span 2', gridRow: 'span 1' }}>{plate('hl-gocaa-certif', P('/pics/gocaacertif.JPG'), 'Certificates handed out on stage', 'auto')}</div>
         </div>
         <div className="grid grid-cols-2 gap-3 md:hidden">
-          {plate(P('/pics/zig.JPG'), 'Violinists lined across the timber-roof stage', '4/3')}
-          {plate(P('/pics/gocaaoctet.JPG'), 'A string octet on the timber-roof stage', '4/3')}
-          {plate(P('/pics/gocaacertif.JPG'), 'Certificates handed out on stage', '4/3')}
-          {plate(P('/pics/gocaa.JPG'), 'The full festival group on the hall stage', '4/3')}
+          {plate('hl-gocaa-wide', P('/pics/zig.JPG'), 'Violinists lined across the timber-roof stage', '4/3')}
+          {plate('hl-gocaa-octet', P('/pics/gocaaoctet.JPG'), 'A string octet on the timber-roof stage', '4/3')}
+          {plate('hl-gocaa-certif', P('/pics/gocaacertif.JPG'), 'Certificates handed out on stage', '4/3')}
+          {plate('hl-gocaa-group', P('/pics/gocaa.JPG'), 'The full festival group on the hall stage', '4/3')}
         </div>
       </div>
 
@@ -59,17 +60,17 @@ const Highlights: React.FC = () => {
         <div>
           {groupHead('Boston, 2023', 'GOCAA at Berklee')}
           <div className="grid grid-cols-2 gap-3 md:gap-4">
-            {plate(P('/pics/alexgocaa.JPG'), 'Alex at the GOCAA table inside Boston Conservatory at Berklee', '3/4')}
-            {plate(P('/pics/gocaagang.JPG'), 'Four members in suits, a candid moment in Boston', '3/4')}
+            {plate('hl-boston-1', P('/pics/alexgocaa.JPG'), 'Alex at the GOCAA table inside Boston Conservatory at Berklee', '3/4')}
+            {plate('hl-boston-2', P('/pics/gocaagang.JPG'), 'Four members in suits, a candid moment in Boston', '3/4')}
           </div>
         </div>
         <div>
           {groupHead('Ceremonies & stages', 'trophies · grand halls · D.A.R.E.')}
           <div className="grid grid-cols-2 gap-3 md:gap-4">
-            {plate(P('/pics/carnegie.JPG'), 'Young performers with certificates on an ornate formal stage', '4/3')}
-            {plate(P('/pics/studioaward.JPG'), 'Members in suits holding gold trophies', '4/3')}
-            {plate(P('/pics/DARE.JPG'), 'An outdoor performance at the D.A.R.E. to Care event', '4/3')}
-            {plate(P('/pics/studioopening.jpg'), 'The ensemble playing at the studio opening', '4/3')}
+            {plate('hl-cere-1', P('/pics/carnegie.JPG'), 'Young performers with certificates on an ornate formal stage', '4/3')}
+            {plate('hl-cere-2', P('/pics/studioaward.JPG'), 'Members in suits holding gold trophies', '4/3')}
+            {plate('hl-cere-3', P('/pics/DARE.JPG'), 'An outdoor performance at the D.A.R.E. to Care event', '4/3')}
+            {plate('hl-cere-4', P('/pics/studioopening.jpg'), 'The ensemble playing at the studio opening', '4/3')}
           </div>
         </div>
       </div>
@@ -79,19 +80,19 @@ const Highlights: React.FC = () => {
         {groupHead('The studio & the stage', 'moments in and out of rehearsal')}
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
           <figure style={{ margin: 0 }}>
-            {plate(P('/pics/Slide_2.jpg'), 'A pianist and a violinist in rehearsal', '3/4')}
+            {plate('hl-studio-1', P('/pics/Slide_2.jpg'), 'A pianist and a violinist in rehearsal', '3/4')}
             <figcaption style={{ fontSize: 11, marginTop: 6, color: 'var(--nk-ink-72)' }}>Rehearsal</figcaption>
           </figure>
           <figure style={{ margin: 0 }}>
-            {plate(P('/pics/vanstring_team.jpg'), 'Two cellists mid-performance', '3/4')}
+            {plate('hl-studio-2', P('/pics/vanstring_team.jpg'), 'Two cellists mid-performance', '3/4')}
             <figcaption style={{ fontSize: 11, marginTop: 6, color: 'var(--nk-ink-72)' }}>Cellists</figcaption>
           </figure>
           <figure style={{ margin: 0 }}>
-            {plate(P('/pics/onekey_cavell.jpg'), 'Kids with instrument cases outside Cavell Gardens, Santa hats on', '3/4')}
+            {plate('hl-studio-3', P('/pics/onekey_cavell.jpg'), 'Kids with instrument cases outside Cavell Gardens, Santa hats on', '3/4')}
             <figcaption style={{ fontSize: 11, marginTop: 6, color: 'var(--nk-ink-72)' }}>Cavell Gardens, Santa hats</figcaption>
           </figure>
           <figure style={{ margin: 0 }}>
-            {plate(P('/pics/vanstringsh.jpg'), 'Seniors watching a performance from their seats', '3/4')}
+            {plate('hl-studio-4', P('/pics/vanstringsh.jpg'), 'Seniors watching a performance from their seats', '3/4')}
             <figcaption style={{ fontSize: 11, marginTop: 6, color: 'var(--nk-ink-72)' }}>For the residents</figcaption>
           </figure>
         </div>

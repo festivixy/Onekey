@@ -3,19 +3,32 @@ import { photoUrl as P } from '../utils/photoUrl';
 import { Link } from 'react-router-dom';
 import { BEHOLD_FEED_ID, INSTAGRAM_URL } from '../config/instagram';
 import { NkHeroSlideshow, useNkPageMotion } from '../components/nocturne/motion';
+import { usePhotoStore } from '../store/photoStore';
+import { SitePhoto, SlotEditor, useSitePhotos } from '../components/nocturne/SitePhoto';
+import { useAuthStore } from '../store/authStore';
 
 
 
 const HISTORY = [
-  { img: P('/pics/vanstring_history.jpg'), alt: 'Orchestra on stage with a projector screen', caption: 'On stage' },
-  { img: P('/pics/old.JPG'), alt: 'The orchestra in an earlier season', caption: 'An earlier season' },
-  { img: P('/pics/covidvanstring.JPG'), alt: 'A masked Vanstring rehearsal during the pandemic', caption: 'Masked rehearsal, pandemic era' },
-  { img: P('/pics/ecrc.jpg'), alt: 'Orchestra performing in a church with stained glass', caption: 'ECRC 2023 · church concert' },
+  { img: P('/pics/vanstring_history.jpg'), alt: 'Orchestra on stage with a projector screen', caption: 'On stage', slot: 'vanstring-history-1' },
+  { img: P('/pics/old.JPG'), alt: 'The orchestra in an earlier season', caption: 'An earlier season', slot: 'vanstring-history-2' },
+  { img: P('/pics/covidvanstring.JPG'), alt: 'A masked Vanstring rehearsal during the pandemic', caption: 'Masked rehearsal, pandemic era', slot: 'vanstring-history-3' },
+  { img: P('/pics/ecrc.jpg'), alt: 'Orchestra performing in a church with stained glass', caption: 'ECRC 2023 · church concert', slot: 'vanstring-history-4' },
 ];
 
 const VanstringHome: React.FC = () => {
   const rootRef = useRef<HTMLDivElement>(null);
   useNkPageMotion(rootRef);
+
+  const fetchPhotos = usePhotoStore(st => st.fetchPhotos);
+  const uploaded = usePhotoStore(st => st.photos.filter(p => p.category === 'vanstring'));
+  useEffect(() => { fetchPhotos(); }, [fetchPhotos]);
+  const photoMap = useSitePhotos(st => st.photos);
+  const fetchSitePhotos = useSitePhotos(st => st.fetch);
+  useEffect(() => { fetchSitePhotos(); }, [fetchSitePhotos]);
+  const { isAuthenticated, user, hasPermission } = useAuthStore();
+  const canEdit = !!(isAuthenticated && user && hasPermission('basic_admin'));
+  const heroSrc = photoMap['vanstring-hero'] ?? P('/pics/vanstring.jpg');
 
   // Load the Behold widget script once, only when a feed ID is configured
   useEffect(() => {
@@ -47,13 +60,15 @@ const VanstringHome: React.FC = () => {
           </div>
         </div>
       </div>
-      <div className="nk-fade mx-6 md:ml-32 md:mr-0">
+      <div className="nk-fade mx-6 md:ml-32 md:mr-0" style={{ position: 'relative' }}>
         <NkHeroSlideshow
-          slides={[{ src: P('/pics/vanstring.jpg'), alt: 'The full Vanstring orchestra on stage under blue lighting' }]}
+          key={heroSrc}
+          slides={[{ src: heroSrc, alt: 'The full Vanstring orchestra on stage under blue lighting' }]}
           height="clamp(280px, 37vw, 540px)"
           margin="36px 0 0"
           showDots={false}
         />
+        {canEdit && <SlotEditor slot="vanstring-hero" hasOverride={!!photoMap['vanstring-hero']} />}
       </div>
 
       {/* about + leader */}
@@ -75,13 +90,15 @@ const VanstringHome: React.FC = () => {
             The Richmond Hospital partnership →
           </Link>
         </div>
-        <figure style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <img className="nk-plate" src={P('/pics/alexzhang.jpg')} alt="Alex Zhang in a suit by a window" style={{ width: '100%', aspectRatio: '3/4', objectFit: 'cover', objectPosition: 'top' }} />
-          <figcaption>
-            <div style={{ fontFamily: 'var(--nk-serif)', fontSize: 22, fontWeight: 700 }}>Alex Zhang</div>
-            <div style={{ fontSize: 12, color: 'var(--nk-ink-78)' }}>Leader · General Manager, Vanstring</div>
-          </figcaption>
-        </figure>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+          <figure style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <SitePhoto slot="vanstring-leader" fallback={P('/pics/alexzhang.jpg')} alt="Alex Zhang in a suit by a window" className="nk-plate" style={{ aspectRatio: '3/4', objectFit: 'cover', objectPosition: 'top' }} />
+            <figcaption>
+              <div style={{ fontFamily: 'var(--nk-serif)', fontSize: 22, fontWeight: 700 }}>Alex Zhang</div>
+              <div style={{ fontSize: 12, color: 'var(--nk-ink-78)' }}>Leader · General Manager, Vanstring</div>
+            </figcaption>
+          </figure>
+        </div>
       </div>
 
       {/* history band */}
@@ -93,12 +110,27 @@ const VanstringHome: React.FC = () => {
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4" style={{ alignItems: 'start' }}>
           {HISTORY.map(h => (
             <figure key={h.img} style={{ margin: 0 }}>
-              <img className="nk-plate" src={h.img} alt={h.alt} loading="lazy" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover' }} />
+              <SitePhoto slot={h.slot} fallback={h.img} alt={h.alt} loading="lazy" className="nk-plate" style={{ aspectRatio: '4/3', objectFit: 'cover' }} />
               <figcaption style={{ fontSize: 11, marginTop: 6, color: 'var(--nk-ink-72)' }}>{h.caption}</figcaption>
             </figure>
           ))}
         </div>
       </div>
+
+      {/* uploaded gallery */}
+      {uploaded.length > 0 && (
+        <div className="nk-fade px-6 pt-12 md:px-16 md:pt-20">
+          <div className="flex flex-wrap items-baseline gap-3 md:gap-[18px]" style={{ borderBottom: '1px solid var(--nk-line-20)', paddingBottom: 14, marginBottom: 26 }}>
+            <h2 className="text-[24px] md:text-[32px]" style={{ fontWeight: 700 }}>From the archive</h2>
+            <span style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 16, color: 'var(--nk-ink-78)' }}>added by the team</span>
+          </div>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {uploaded.map(p => (
+              <img key={p.id} className="nk-plate" src={p.url} alt={p.filename} loading="lazy" style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover' }} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* instagram */}
       <div className="nk-fade px-6 pt-12 md:px-16 md:pt-20">
@@ -137,12 +169,13 @@ const VanstringHome: React.FC = () => {
       <div className="nk-fade mt-12 md:mt-20" style={{ borderTop: '1px solid var(--nk-line-20)', background: 'var(--nk-well)', position: 'relative', overflow: 'hidden' }}>
         <div className="flex justify-center px-6 py-9 md:px-16 md:py-11" style={{ position: 'relative' }}>
           <figure style={{ margin: 0, maxWidth: 880, width: '100%' }}>
-            <img
-              className="nk-plate"
-              src={P('/pics/vanstring_member_3.jpg')}
+            <SitePhoto
+              slot="vanstring-team-photo"
+              fallback={P('/pics/vanstring_member_3.jpg')}
               alt='Vanstring members posing before the "Vanstring" screen'
               loading="lazy"
-              style={{ width: '100%', aspectRatio: '3/2', objectFit: 'cover' }}
+              className="nk-plate"
+              style={{ aspectRatio: '3/2', objectFit: 'cover' }}
             />
             <figcaption style={{ fontSize: 12, marginTop: 10, color: 'var(--nk-ink-78)', textAlign: 'center' }}>The ensemble, assembled</figcaption>
           </figure>
