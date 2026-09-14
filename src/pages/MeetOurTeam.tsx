@@ -22,6 +22,7 @@ export const SECTION_LABELS: Record<SectionKey, string> = {
 
 const SECTION_SUBTITLES: Partial<Record<SectionKey, string>> = {
   founders: 'the four who began it, 2020',
+  concertmasters: 'led from the first desk',
   alumni: 'the members who came before',
 };
 
@@ -32,6 +33,33 @@ const initialsOf = (name: string) =>
     .slice(0, 2)
     .map(w => w[0]?.toUpperCase() ?? '')
     .join('');
+
+const igUrl = (v: string) => (v.startsWith('http') ? v : `https://instagram.com/${v.replace(/^@/, '')}`);
+
+const isCoordinator = (m: TeamMember) => /coordinator/i.test(m.role);
+const isHeadConcertmaster = (m: TeamMember) => /head/i.test(m.role) && /concertmaster/i.test(m.role);
+
+const IgButton: React.FC<{ member: TeamMember; size?: number }> = ({ member, size = 28 }) =>
+  member.instagram ? (
+    <a
+      href={igUrl(member.instagram)}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`${member.name} on Instagram`}
+      onClick={e => e.stopPropagation()}
+      style={{
+        width: size, height: size, display: 'inline-grid', placeItems: 'center',
+        border: '1px solid rgba(124,92,255,0.4)', borderRadius: 999, color: 'var(--nk-accent-400)',
+        marginTop: 6,
+      }}
+    >
+      <svg width={size * 0.46} height={size * 0.46} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <rect width="20" height="20" x="2" y="2" rx="5" />
+        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+        <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+      </svg>
+    </a>
+  ) : null;
 
 const PencilOverlay: React.FC<{ id: string }> = ({ id }) => {
   const navigate = useNavigate();
@@ -55,13 +83,16 @@ const PencilOverlay: React.FC<{ id: string }> = ({ id }) => {
   );
 };
 
-const MemberCard: React.FC<{ member: TeamMember; layout: SectionLayout; editable: boolean }> = ({ member, layout, editable }) => {
+const MemberCard: React.FC<{ member: TeamMember; layout: SectionLayout; editable: boolean; featured?: boolean }> = ({
+  member, layout, editable, featured,
+}) => {
   const img = resolveTeamImageSrc(member.image);
   const radius = layout.shape === 'circle' ? '50%' : 8;
+  const featuredStyle: React.CSSProperties = featured ? { borderColor: 'rgba(124,92,255,0.55)', boxShadow: '0 0 0 1px rgba(124,92,255,0.35)' } : {};
 
   if (layout.size === 'compact') {
     return (
-      <div className="nk-pcard nk-compact" style={{ position: 'relative' }}>
+      <div className="nk-pcard nk-compact" style={{ position: 'relative', ...featuredStyle }}>
         {editable && <PencilOverlay id={member.id} />}
         {img ? (
           <img className="nk-smallphoto" src={img} alt={member.name} style={{ borderRadius: radius }} />
@@ -70,12 +101,13 @@ const MemberCard: React.FC<{ member: TeamMember; layout: SectionLayout; editable
         )}
         <span style={{ fontFamily: 'var(--nk-serif)', fontWeight: 700, fontSize: 17, color: 'var(--nk-accent-300)', marginTop: 8 }}>{member.name}</span>
         {member.role && <span style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--nk-accent-400)', marginTop: 2 }}>{member.role}</span>}
+        <IgButton member={member} size={24} />
       </div>
     );
   }
 
   return (
-    <div className="nk-pcard" style={{ position: 'relative' }}>
+    <div className="nk-pcard" style={{ position: 'relative', ...featuredStyle }}>
       {editable && <PencilOverlay id={member.id} />}
       {img ? (
         <img className="nk-photo" src={img} alt={member.name} style={layout.size === 'large' ? { aspectRatio: '4/5' } : undefined} />
@@ -83,6 +115,11 @@ const MemberCard: React.FC<{ member: TeamMember; layout: SectionLayout; editable
         <div className="nk-noimg" style={layout.size === 'large' ? { aspectRatio: '4/5' } : undefined}>{initialsOf(member.name)}</div>
       )}
       <div className="nk-body">
+        {featured && (
+          <span style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nk-accent)', border: '1px solid rgba(124,92,255,0.5)', padding: '3px 10px', borderRadius: 999 }}>
+            First chair
+          </span>
+        )}
         <div className="nk-name">{member.name}</div>
         {member.role && <div className="nk-sec">{member.role}</div>}
         {member.school && <div className="nk-school">{member.school}</div>}
@@ -91,7 +128,30 @@ const MemberCard: React.FC<{ member: TeamMember; layout: SectionLayout; editable
         ) : (
           <div className="nk-bio empty">bio to come — space reserved</div>
         )}
+        <IgButton member={member} />
       </div>
+    </div>
+  );
+};
+
+/** Small sub-role card for the homework-help team (helpers, not coordinators). */
+const MiniCard: React.FC<{ member: TeamMember; editable: boolean }> = ({ member, editable }) => {
+  const img = resolveTeamImageSrc(member.image);
+  return (
+    <div className="nk-pcard nk-compact" style={{ position: 'relative', padding: '18px 12px 20px' }}>
+      {editable && <PencilOverlay id={member.id} />}
+      {img ? (
+        <img src={img} alt={member.name} style={{ width: 64, height: 64, objectFit: 'cover', objectPosition: '50% 20%', borderRadius: 12, border: '3px solid #ffffff', outline: '1px solid var(--nk-line-20)', filter: 'saturate(0.92)' }} />
+      ) : (
+        <div style={{ width: 64, height: 64, borderRadius: 12, background: 'rgba(59,116,232,0.1)', display: 'grid', placeItems: 'center', fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 22, color: 'rgba(124,92,255,0.55)', border: '3px solid #ffffff', outline: '1px solid var(--nk-line-20)' }}>
+          {initialsOf(member.name)}
+        </div>
+      )}
+      <span style={{ fontFamily: 'var(--nk-serif)', fontWeight: 700, fontSize: 17, color: 'var(--nk-accent-300)', marginTop: 8 }}>{member.name}</span>
+      <span style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--nk-accent-400)', marginTop: 2 }}>
+        {member.role || 'HW Help Team'}
+      </span>
+      <IgButton member={member} size={24} />
     </div>
   );
 };
@@ -180,13 +240,43 @@ const MeetOurTeam: React.FC = () => {
   const sectionCount = visibleSections.length + (alumniVisible ? 1 : 0);
   let numeralIdx = 0;
 
-  const renderSectionBody = (members: TeamMember[], sl: SectionLayout) => {
+  const renderSectionBody = (key: SectionKey, members: TeamMember[], sl: SectionLayout) => {
     const vars = {
       ['--cols-d' as string]: sl.perRow.desktop,
       ['--cols-t' as string]: sl.perRow.tablet,
       ['--cols-p' as string]: sl.perRow.phone,
     } as React.CSSProperties;
-    const cards = members.map(m => <MemberCard key={m.id} member={m} layout={sl} editable={canManage} />);
+
+    // homework help: coordinators get full cards, helpers a mini-card row below
+    if (key === 'coordinators') {
+      const coordinators = members.filter(isCoordinator);
+      const helpers = members.filter(m => !isCoordinator(m));
+      return (
+        <>
+          <div className="nk-teamgrid" style={vars}>
+            {coordinators.map(m => <MemberCard key={m.id} member={m} layout={sl} editable={canManage} />)}
+          </div>
+          {helpers.length > 0 && (
+            <>
+              <div style={{ fontFamily: 'var(--nk-serif)', fontStyle: 'italic', fontSize: 17, color: 'var(--nk-ink-78)', margin: '30px 0 14px' }}>
+                — and the team who help with homework help
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6 md:gap-[14px]" style={{ alignItems: 'stretch' }}>
+                {helpers.map(m => <MiniCard key={m.id} member={m} editable={canManage} />)}
+              </div>
+            </>
+          )}
+        </>
+      );
+    }
+
+    // concertmasters: the head concertmaster leads, featured
+    const ordered = key === 'concertmasters'
+      ? [...members].sort((a, b) => Number(isHeadConcertmaster(b)) - Number(isHeadConcertmaster(a)))
+      : members;
+    const cards = ordered.map(m => (
+      <MemberCard key={m.id} member={m} layout={sl} editable={canManage} featured={key === 'concertmasters' && isHeadConcertmaster(m)} />
+    ));
     return sl.mode === 'carousel' ? <Carousel vars={vars}>{cards}</Carousel> : <div className="nk-teamgrid" style={vars}>{cards}</div>;
   };
 
@@ -248,7 +338,7 @@ const MeetOurTeam: React.FC = () => {
         return (
           <div key={key} className="nk-fade px-6 pt-10 md:px-16 md:pt-14">
             <SectionHead numeral={numeral} title={SECTION_LABELS[key]} subtitle={SECTION_SUBTITLES[key]} />
-            {renderSectionBody(members, sl)}
+            {renderSectionBody(key, members, sl)}
           </div>
         );
       })}
@@ -275,7 +365,7 @@ const MeetOurTeam: React.FC = () => {
               <path d="m6 9 6 6 6-6" />
             </svg>
           </button>
-          {alumniOpen && <div style={{ marginTop: 16 }}>{renderSectionBody(alumniMembers, sectionLayoutOf(layout, 'alumni'))}</div>}
+          {alumniOpen && <div style={{ marginTop: 16 }}>{renderSectionBody('alumni', alumniMembers, sectionLayoutOf(layout, 'alumni'))}</div>}
         </div>
       )}
 
