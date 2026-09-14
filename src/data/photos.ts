@@ -2,15 +2,12 @@ import { PHOTO_BASE as PUBLIC_URL } from '../utils/photoUrl';
 
 // OneKey photos featured on About / Fundraisers pages — used by the home hero slideshow
 export const PAGE_PHOTOS = [
-  `${PUBLIC_URL}/pics/richmondhospital.jpg`,
   `${PUBLIC_URL}/pics/onekey.jpg`,
   `${PUBLIC_URL}/pics/onekey_team.jpg`,
   `${PUBLIC_URL}/pics/onekey_history.jpg`,
   `${PUBLIC_URL}/pics/onekey_cavell.jpg`,
   `${PUBLIC_URL}/pics/onekey_cellos.jpg`,
   `${PUBLIC_URL}/pics/onekey_perform_mic.jpg`,
-  `${PUBLIC_URL}/pics/onekey_perform_seniors.jpg`,
-  `${PUBLIC_URL}/pics/onekey_perform_piano.jpg`,
   `${PUBLIC_URL}/pics/onekey_homework.jpg`,
 ];
 
