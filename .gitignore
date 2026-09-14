@@ -87,3 +87,6 @@ desktop.ini
 # Cloudflare local dev (secrets + local D1/R2 state)
 .dev.vars
 /.wrangler
+
+# local working notes, not part of the site
+/docs/
