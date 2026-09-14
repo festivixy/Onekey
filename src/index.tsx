@@ -12,6 +12,7 @@ import './styles/enhanced-design.css';
 import './styles/tailwind.css';
 // Nocturne redesign tokens + components — must win the cascade
 import './styles/nocturne.css';
+import './styles/nocturne-admin.css';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement

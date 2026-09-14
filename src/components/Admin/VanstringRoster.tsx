@@ -62,21 +62,21 @@ const VanstringRoster: React.FC = () => {
     <div style={{ maxWidth: 1100 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16, marginBottom: 24 }}>
         <div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#fafaf9', margin: 0 }}>Vanstring Roster</h2>
-          <p style={{ fontSize: '0.875rem', color: '#a8a29e', marginTop: 4 }}>
-            Edit section groups and members shown on the <code style={{ color: '#c8a46e' }}>/vanstring</code> page. Saved globally to Firestore.
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#2b2740', margin: 0 }}>Vanstring Roster</h2>
+          <p style={{ fontSize: '0.875rem', color: 'rgba(43,39,64,0.72)', marginTop: 4 }}>
+            Edit section groups and members shown on the <code style={{ color: '#6350d4' }}>/vanstring</code> page. Saved globally to Firestore.
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          {saveState === 'saved' && <span style={{ color: '#86bc88', fontSize: '0.85rem', fontWeight: 600 }}>✓ Saved</span>}
-          {saveState === 'error' && <span style={{ color: '#fb7185', fontSize: '0.85rem', fontWeight: 600 }}>Save failed</span>}
-          {error && saveState !== 'saving' && <span style={{ color: '#fb7185', fontSize: '0.85rem' }}>{error}</span>}
+          {saveState === 'saved' && <span style={{ color: '#2d8c64', fontSize: '0.85rem', fontWeight: 600 }}>✓ Saved</span>}
+          {saveState === 'error' && <span style={{ color: '#c0392b', fontSize: '0.85rem', fontWeight: 600 }}>Save failed</span>}
+          {error && saveState !== 'saving' && <span style={{ color: '#c0392b', fontSize: '0.85rem' }}>{error}</span>}
           {isDirty && (
             <button onClick={reset} disabled={saveState === 'saving'}
               style={{
                 padding: '8px 16px', borderRadius: 8,
-                background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
-                color: '#a8a29e', fontSize: '0.85rem', cursor: 'pointer',
+                background: 'transparent', border: '1px solid rgba(59,52,95,0.2)',
+                color: 'rgba(43,39,64,0.72)', fontSize: '0.85rem', cursor: 'pointer',
               }}>
               Discard
             </button>
@@ -84,8 +84,8 @@ const VanstringRoster: React.FC = () => {
           <button onClick={save} disabled={!isDirty || saveState === 'saving' || isLoading}
             style={{
               padding: '8px 18px', borderRadius: 8,
-              background: isDirty ? '#c8a46e' : 'rgba(120,113,108,0.3)',
-              color: isDirty ? '#1c1917' : '#78716c',
+              background: isDirty ? '#6350d4' : 'rgba(59,52,95,0.15)',
+              color: isDirty ? '#ffffff' : 'rgba(43,39,64,0.5)',
               border: 'none', fontWeight: 700, fontSize: '0.85rem',
               cursor: isDirty ? 'pointer' : 'not-allowed',
               transition: 'background 0.2s',
@@ -98,8 +98,8 @@ const VanstringRoster: React.FC = () => {
       <div style={{ display: 'grid', gap: 16 }}>
         {draft.map((section, idx) => (
           <div key={idx} style={{
-            background: '#231f1c',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: '#f7f6fd',
+            border: '1px solid rgba(59,52,95,0.15)',
             borderRadius: 12, padding: 20,
           }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 16 }}>
@@ -110,11 +110,11 @@ const VanstringRoster: React.FC = () => {
                 placeholder="Section name (e.g. Violin 1)"
                 style={{
                   flex: 1, padding: '8px 12px', borderRadius: 6,
-                  background: '#1c1917', border: '1px solid rgba(255,255,255,0.1)',
-                  color: '#fafaf9', fontSize: '1rem', fontWeight: 600,
+                  background: '#ffffff', border: '1px solid rgba(59,52,95,0.17)',
+                  color: '#2b2740', fontSize: '1rem', fontWeight: 600,
                 }}
               />
-              <span style={{ fontSize: '0.75rem', color: '#78716c' }}>
+              <span style={{ fontSize: '0.75rem', color: 'rgba(43,39,64,0.58)' }}>
                 {section.members.length} {section.members.length === 1 ? 'member' : 'members'}
               </span>
               <div style={{ display: 'flex', gap: 4 }}>
@@ -124,7 +124,7 @@ const VanstringRoster: React.FC = () => {
                     padding: '6px 10px', borderRadius: 6, fontSize: '0.85rem',
                     background: idx === 0 ? 'rgba(40,40,40,0.4)' : 'rgba(255,255,255,0.05)',
                     color: idx === 0 ? '#57534e' : '#a8a29e',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(59,52,95,0.15)',
                     cursor: idx === 0 ? 'not-allowed' : 'pointer',
                   }}>↑</button>
                 <button onClick={() => moveSection(idx, 1)} disabled={idx === draft.length - 1}
@@ -133,20 +133,20 @@ const VanstringRoster: React.FC = () => {
                     padding: '6px 10px', borderRadius: 6, fontSize: '0.85rem',
                     background: idx === draft.length - 1 ? 'rgba(40,40,40,0.4)' : 'rgba(255,255,255,0.05)',
                     color: idx === draft.length - 1 ? '#57534e' : '#a8a29e',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(59,52,95,0.15)',
                     cursor: idx === draft.length - 1 ? 'not-allowed' : 'pointer',
                   }}>↓</button>
                 <button onClick={() => removeSection(idx)}
                   title="Remove section"
                   style={{
                     padding: '6px 10px', borderRadius: 6, fontSize: '0.85rem',
-                    background: 'rgba(251,113,133,0.1)', color: '#fb7185',
-                    border: '1px solid rgba(251,113,133,0.2)', cursor: 'pointer',
+                    background: 'rgba(192,57,43,0.07)', color: '#c0392b',
+                    border: '1px solid rgba(192,57,43,0.3)', cursor: 'pointer',
                   }}>Remove</button>
               </div>
             </div>
 
-            <label style={{ display: 'block', fontSize: '0.75rem', color: '#78716c', marginBottom: 6, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(43,39,64,0.58)', marginBottom: 6, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
               Members (one per line)
             </label>
             <textarea
@@ -155,8 +155,8 @@ const VanstringRoster: React.FC = () => {
               placeholder="Curtis&#10;Gabby&#10;Rachel"
               style={{
                 width: '100%', padding: '10px 12px', borderRadius: 6,
-                background: '#1c1917', border: '1px solid rgba(255,255,255,0.1)',
-                color: '#fafaf9', fontSize: '0.9rem', lineHeight: 1.6,
+                background: '#ffffff', border: '1px solid rgba(59,52,95,0.17)',
+                color: '#2b2740', fontSize: '0.9rem', lineHeight: 1.6,
                 fontFamily: 'inherit', resize: 'vertical',
                 minHeight: 200, maxHeight: 400,
               }}
@@ -168,8 +168,8 @@ const VanstringRoster: React.FC = () => {
       <button onClick={addSection}
         style={{
           marginTop: 16, padding: '10px 18px', borderRadius: 8,
-          background: 'rgba(200,164,110,0.1)', border: '1px dashed rgba(200,164,110,0.3)',
-          color: '#c8a46e', fontSize: '0.875rem', fontWeight: 600,
+          background: 'rgba(124,92,255,0.08)', border: '1px dashed rgba(124,92,255,0.35)',
+          color: '#6350d4', fontSize: '0.875rem', fontWeight: 600,
           cursor: 'pointer', width: '100%',
         }}>
         + Add section

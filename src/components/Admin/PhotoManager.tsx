@@ -71,8 +71,8 @@ const PhotoManager: React.FC = () => {
     <div style={{ maxWidth: 1200 }}>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#fafaf9', margin: 0 }}>Photo Manager</h2>
-        <p style={{ fontSize: '0.875rem', color: '#a8a29e', marginTop: 4 }}>
+        <h2 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#2b2740', margin: 0 }}>Photo Manager</h2>
+        <p style={{ fontSize: '0.875rem', color: 'rgba(43,39,64,0.72)', marginTop: 4 }}>
           Upload and organize photos. Uploaded photos automatically appear in the matching page's slideshow / gallery.
         </p>
       </div>
@@ -87,8 +87,8 @@ const PhotoManager: React.FC = () => {
           borderRadius: 14,
           padding: '32px 24px',
           textAlign: 'center', cursor: 'pointer',
-          background: isDragging ? 'rgba(200,164,110,0.15)' : '#231f1c',
-          border: `2px dashed ${isDragging ? '#c8a46e' : 'rgba(200,164,110,0.3)'}`,
+          background: isDragging ? 'rgba(124,92,255,0.1)' : 'var(--nk-well)',
+          border: `2px dashed ${isDragging ? '#7c5cff' : 'rgba(124,92,255,0.35)'}`,
           transition: 'all 0.2s',
         }}
       >
@@ -100,10 +100,10 @@ const PhotoManager: React.FC = () => {
           style={{ display: 'none' }}
           onChange={e => { if (e.target.files) { handleFiles(e.target.files); e.target.value = ''; } }}
         />
-        <div style={{ fontSize: '1.05rem', fontWeight: 600, color: '#fafaf9', marginBottom: 6 }}>
+        <div style={{ fontSize: '1.05rem', fontWeight: 600, color: '#2b2740', marginBottom: 6 }}>
           {isDragging ? 'Drop to upload' : 'Drag photos here or click to browse'}
         </div>
-        <div style={{ fontSize: '0.85rem', color: '#78716c' }}>
+        <div style={{ fontSize: '0.85rem', color: 'rgba(43,39,64,0.58)' }}>
           Max 12 MB per image · JPG / PNG / WEBP / GIF
         </div>
 
@@ -112,7 +112,7 @@ const PhotoManager: React.FC = () => {
           style={{ marginTop: 16, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}
           onClick={e => e.stopPropagation()}
         >
-          <span style={{ fontSize: '0.8rem', color: '#a8a29e' }}>Upload into:</span>
+          <span style={{ fontSize: '0.8rem', color: 'rgba(43,39,64,0.72)' }}>Upload into:</span>
           {PHOTO_CATEGORIES.map(c => (
             <button
               key={c.id}
@@ -132,15 +132,15 @@ const PhotoManager: React.FC = () => {
 
         {/* Upload progress */}
         {uploadProgress && (
-          <div style={{ marginTop: 16, fontSize: '0.85rem', color: '#c8a46e' }}>
+          <div style={{ marginTop: 16, fontSize: '0.85rem', color: '#6350d4' }}>
             Uploaded {uploadProgress.done} of {uploadProgress.total}
-            {uploadProgress.failed > 0 && <span style={{ color: '#fb7185' }}> · {uploadProgress.failed} failed</span>}
+            {uploadProgress.failed > 0 && <span style={{ color: '#c0392b' }}> · {uploadProgress.failed} failed</span>}
           </div>
         )}
       </div>
 
       {error && (
-        <div style={{ marginTop: 16, padding: '10px 14px', borderRadius: 8, background: 'rgba(251,113,133,0.1)', color: '#fb7185', fontSize: '0.875rem' }}>
+        <div style={{ marginTop: 16, padding: '10px 14px', borderRadius: 8, background: 'rgba(192,57,43,0.07)', color: '#c0392b', fontSize: '0.875rem' }}>
           {error}
         </div>
       )}
@@ -153,7 +153,7 @@ const PhotoManager: React.FC = () => {
             padding: '6px 14px', borderRadius: 999, fontSize: '0.8rem', fontWeight: 600,
             background: filter === 'all' ? '#fafaf9' : 'rgba(255,255,255,0.05)',
             color: filter === 'all' ? '#1c1917' : '#a8a29e',
-            border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer',
+            border: '1px solid rgba(59,52,95,0.17)', cursor: 'pointer',
           }}
         >
           All ({photos.length + BUILTIN_PHOTOS.length})
@@ -177,14 +177,14 @@ const PhotoManager: React.FC = () => {
 
       {/* Uploaded grid */}
       <div style={{ marginTop: 24 }}>
-        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#c8a46e', marginBottom: 12 }}>
+        <h3 style={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6350d4', marginBottom: 12 }}>
           Uploaded ({visiblePhotos.length})
         </h3>
         {isLoading && photos.length === 0 && (
-          <div style={{ padding: 40, textAlign: 'center', color: '#78716c' }}>Loading…</div>
+          <div style={{ padding: 40, textAlign: 'center', color: 'rgba(43,39,64,0.58)' }}>Loading…</div>
         )}
         {!isLoading && visiblePhotos.length === 0 && (
-          <div style={{ padding: 24, textAlign: 'center', color: '#78716c', fontSize: '0.85rem', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: 8 }}>
+          <div style={{ padding: 24, textAlign: 'center', color: 'rgba(43,39,64,0.58)', fontSize: '0.85rem', border: '1px dashed rgba(59,52,95,0.18)', borderRadius: 8 }}>
             No uploaded photos {filter !== 'all' ? `in ${categoryMeta(filter)?.label}` : 'yet'}.
           </div>
         )}
@@ -201,17 +201,17 @@ const PhotoManager: React.FC = () => {
                   key={photo.id}
                   style={{
                     borderRadius: 10, overflow: 'hidden',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    background: '#1a1714', position: 'relative',
+                    border: '1px solid rgba(59,52,95,0.15)',
+                    background: '#f0f1fb', position: 'relative',
                   }}
                 >
-                  <div style={{ aspectRatio: '4/3', background: '#0a0a0a', overflow: 'hidden' }}>
+                  <div style={{ aspectRatio: '4/3', background: '#f0f1fb', overflow: 'hidden' }}>
                     <img src={photo.url} alt={photo.filename}
                       loading="lazy"
                       style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                   </div>
                   <div style={{ padding: '10px 12px' }}>
-                    <div style={{ fontSize: '0.75rem', color: '#a8a29e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    <div style={{ fontSize: '0.75rem', color: 'rgba(43,39,64,0.72)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                       title={photo.filename}>
                       {photo.filename}
                     </div>
@@ -221,12 +221,12 @@ const PhotoManager: React.FC = () => {
                         onChange={e => recategorize(photo.id, e.target.value as PhotoCategory)}
                         style={{
                           flex: 1, fontSize: '0.7rem', padding: '4px 6px', borderRadius: 4,
-                          background: meta?.color ?? '#444', color: '#1c1917', fontWeight: 700,
+                          background: meta?.color ?? '#444', color: '#ffffff', fontWeight: 700,
                           border: 'none', cursor: 'pointer', appearance: 'none',
                         }}
                       >
                         {PHOTO_CATEGORIES.map(c => (
-                          <option key={c.id} value={c.id} style={{ background: '#231f1c', color: '#fafaf9' }}>
+                          <option key={c.id} value={c.id} style={{ background: '#f7f6fd', color: '#2b2740' }}>
                             {c.label}
                           </option>
                         ))}
@@ -236,8 +236,8 @@ const PhotoManager: React.FC = () => {
                         title="Delete"
                         style={{
                           padding: '4px 10px', borderRadius: 4, fontSize: '0.7rem',
-                          background: 'rgba(251,113,133,0.1)', color: '#fb7185',
-                          border: '1px solid rgba(251,113,133,0.2)', cursor: 'pointer', fontWeight: 600,
+                          background: 'rgba(192,57,43,0.07)', color: '#c0392b',
+                          border: '1px solid rgba(192,57,43,0.3)', cursor: 'pointer', fontWeight: 600,
                         }}
                       >
                         Delete
@@ -254,11 +254,11 @@ const PhotoManager: React.FC = () => {
       {/* Built-in grid (read-only) */}
       {visibleBuiltins.length > 0 && (
         <div style={{ marginTop: 32 }}>
-          <h3 style={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#78716c', marginBottom: 6 }}>
+          <h3 style={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(43,39,64,0.58)', marginBottom: 6 }}>
             Built-in ({visibleBuiltins.length})
           </h3>
-          <p style={{ fontSize: '0.75rem', color: '#57534e', marginBottom: 12 }}>
-            Photos shipped with the codebase. Read-only — to remove or change, edit <code style={{ color: '#a8a29e' }}>src/data/builtinPhotos.ts</code> in the repo.
+          <p style={{ fontSize: '0.75rem', color: 'rgba(43,39,64,0.5)', marginBottom: 12 }}>
+            Photos shipped with the codebase. Read-only — to remove or change, edit <code style={{ color: 'rgba(43,39,64,0.72)' }}>src/data/builtinPhotos.ts</code> in the repo.
           </p>
           <div style={{
             display: 'grid',
@@ -272,19 +272,19 @@ const PhotoManager: React.FC = () => {
                   key={photo.src}
                   style={{
                     borderRadius: 10, overflow: 'hidden',
-                    border: '1px solid rgba(255,255,255,0.05)',
-                    background: '#1a1714', position: 'relative',
+                    border: '1px solid rgba(59,52,95,0.12)',
+                    background: '#f0f1fb', position: 'relative',
                     opacity: 0.92,
                   }}
                 >
-                  <div style={{ aspectRatio: '4/3', background: '#0a0a0a', overflow: 'hidden', position: 'relative' }}>
+                  <div style={{ aspectRatio: '4/3', background: '#f0f1fb', overflow: 'hidden', position: 'relative' }}>
                     <img src={photo.src} alt={photo.label}
                       loading="lazy"
                       style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                     <span style={{
                       position: 'absolute', top: 8, left: 8,
                       padding: '2px 8px', borderRadius: 4, fontSize: '0.65rem', fontWeight: 700,
-                      background: 'rgba(12,10,9,0.78)', color: '#a8a29e',
+                      background: 'rgba(43,39,64,0.45)', color: 'rgba(43,39,64,0.72)',
                       letterSpacing: '0.06em', textTransform: 'uppercase',
                       backdropFilter: 'blur(6px)',
                     }}>
@@ -292,12 +292,12 @@ const PhotoManager: React.FC = () => {
                     </span>
                   </div>
                   <div style={{ padding: '10px 12px' }}>
-                    <div style={{ fontSize: '0.75rem', color: '#a8a29e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    <div style={{ fontSize: '0.75rem', color: 'rgba(43,39,64,0.72)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                       title={photo.label}>
                       {photo.label}
                     </div>
                     <div style={{ marginTop: 6, display: 'inline-block', padding: '2px 8px', borderRadius: 4, fontSize: '0.65rem', fontWeight: 700,
-                      background: meta?.color ?? '#444', color: '#1c1917', letterSpacing: '0.04em' }}>
+                      background: meta?.color ?? '#444', color: '#ffffff', letterSpacing: '0.04em' }}>
                       {meta?.label ?? photo.category}
                     </div>
                   </div>

@@ -1,0 +1,270 @@
+/* ── Nocturne skin for the admin dashboard ──
+   Restyles the existing admin markup (admin-dashboard.css classes) to the
+   light concert-programme look. Loaded after the legacy admin styles. */
+
+.admin-dashboard {
+  background: #f6f6fb !important;
+  color: var(--nk-ink) !important;
+  font-family: var(--nk-body) !important;
+}
+
+/* sidebar */
+.admin-dashboard .admin-sidebar {
+  background: #ffffff !important;
+  border-right: 1px solid var(--nk-line-20) !important;
+  box-shadow: none !important;
+  color: var(--nk-ink) !important;
+}
+.admin-dashboard .admin-sidebar h1,
+.admin-dashboard .admin-sidebar h2,
+.admin-dashboard .admin-sidebar h3 {
+  font-family: var(--nk-serif) !important;
+  color: var(--nk-ink) !important;
+  font-weight: 500 !important;
+}
+.admin-dashboard .sidebar-item {
+  font-size: 12px !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: var(--nk-ink-78) !important;
+  background: transparent !important;
+  border: none !important;
+  border-left: 2px solid transparent !important;
+  border-radius: 0 !important;
+}
+.admin-dashboard .sidebar-item:hover {
+  color: var(--nk-accent-400) !important;
+  background: rgba(124, 92, 255, 0.05) !important;
+}
+.admin-dashboard .sidebar-item.active {
+  color: var(--nk-accent-400) !important;
+  background: rgba(124, 92, 255, 0.07) !important;
+  border-left: 2px solid var(--nk-accent) !important;
+}
+.admin-dashboard .sidebar-item i { color: inherit !important; }
+
+/* content area */
+.admin-dashboard .admin-content { background: transparent !important; color: var(--nk-ink) !important; }
+.admin-dashboard .content-header {
+  border-bottom: 1px solid var(--nk-line-20) !important;
+  background: transparent !important;
+}
+.admin-dashboard .content-title {
+  font-family: var(--nk-serif) !important;
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  color: var(--nk-ink) !important;
+}
+.admin-dashboard .text-muted { color: var(--nk-ink-58) !important; }
+
+/* stat cards */
+.admin-dashboard .stat-card {
+  background: var(--nk-panel) !important;
+  border: 1px solid var(--nk-line-17) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+  color: var(--nk-ink) !important;
+}
+.admin-dashboard .stat-card h3,
+.admin-dashboard .stat-content h3 {
+  font-family: var(--nk-serif) !important;
+  color: var(--nk-ink) !important;
+}
+.admin-dashboard .stat-icon {
+  background: rgba(124, 92, 255, 0.1) !important;
+  color: var(--nk-accent-400) !important;
+  border-radius: 12px !important;
+}
+
+/* buttons */
+.admin-dashboard .btn {
+  font-family: var(--nk-body) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: background 0.15s ease, color 0.15s ease !important;
+}
+.admin-dashboard .btn-primary {
+  border: 1px solid var(--nk-accent) !important;
+  color: var(--nk-accent-400) !important;
+}
+.admin-dashboard .btn-primary:hover { background: rgba(124, 92, 255, 0.08) !important; }
+.admin-dashboard .btn-secondary {
+  border: 1px solid var(--nk-line-20) !important;
+  color: var(--nk-ink-85) !important;
+}
+.admin-dashboard .btn-secondary:hover { background: rgba(59, 52, 95, 0.05) !important; }
+.admin-dashboard .btn-danger {
+  border: 1px solid rgba(192, 57, 43, 0.5) !important;
+  color: #c0392b !important;
+}
+.admin-dashboard .btn-danger:hover { background: rgba(192, 57, 43, 0.07) !important; }
+.admin-dashboard .btn-warning {
+  border: 1px solid rgba(180, 120, 30, 0.5) !important;
+  color: #a06f24 !important;
+}
+.admin-dashboard .btn-warning:hover { background: rgba(180, 120, 30, 0.07) !important; }
+.admin-dashboard .btn-success {
+  border: 1px solid rgba(45, 140, 100, 0.5) !important;
+  color: #2d8c64 !important;
+}
+.admin-dashboard .btn-success:hover { background: rgba(45, 140, 100, 0.07) !important; }
+.admin-dashboard .btn-ghost { border: 1px solid transparent !important; color: var(--nk-accent-400) !important; }
+.admin-dashboard .btn-ghost:hover { background: rgba(124, 92, 255, 0.08) !important; }
+
+/* search + filters */
+.admin-dashboard .search-bar { background: transparent !important; }
+.admin-dashboard .search-input,
+.admin-dashboard .filter-select {
+  background: var(--nk-well) !important;
+  border: 1px solid rgba(59, 52, 95, 0.2) !important;
+  border-radius: 10px !important;
+  color: var(--nk-ink) !important;
+  font-family: var(--nk-body) !important;
+}
+.admin-dashboard .search-input::placeholder { color: var(--nk-ink-58) !important; }
+
+/* tables */
+.admin-dashboard .data-table {
+  background: #ffffff !important;
+  border: 1px solid var(--nk-line-17) !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  color: var(--nk-ink) !important;
+}
+.admin-dashboard .data-table th {
+  background: transparent !important;
+  font-size: 10px !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: rgba(43, 39, 64, 0.68) !important;
+  border-bottom: 1px solid var(--nk-line-20) !important;
+}
+.admin-dashboard .data-table td {
+  color: var(--nk-ink-90) !important;
+  border-bottom: 1px solid rgba(59, 52, 95, 0.1) !important;
+}
+.admin-dashboard .data-table td strong {
+  font-family: var(--nk-serif) !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  color: var(--nk-ink) !important;
+}
+.admin-dashboard .data-table tr:hover td { background: rgba(59, 52, 95, 0.03) !important; }
+
+/* badges + thumbs */
+.admin-dashboard .status-badge {
+  font-size: 10px !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  border-radius: 10px !important;
+}
+.admin-dashboard .status-badge.active { background: rgba(45, 140, 100, 0.1) !important; color: #2d8c64 !important; }
+.admin-dashboard .status-badge.inactive { background: rgba(192, 57, 43, 0.08) !important; color: #c0392b !important; }
+.admin-dashboard .role-badge {
+  font-size: 10px !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  background: transparent !important;
+  border: 1px solid rgba(59, 52, 95, 0.2) !important;
+  color: var(--nk-ink-85) !important;
+  border-radius: 10px !important;
+}
+.admin-dashboard .member-thumb {
+  border-radius: 12px !important;
+  border: 2px solid #ffffff !important;
+  outline: 1px solid rgba(59, 52, 95, 0.19) !important;
+  filter: saturate(0.92) !important;
+}
+.admin-dashboard .member-thumb-fallback {
+  background: rgba(59, 116, 232, 0.12) !important;
+  color: var(--nk-accent-300) !important;
+  font-family: var(--nk-serif) !important;
+  font-style: italic !important;
+  border-radius: 12px !important;
+}
+
+/* modals + forms */
+.admin-dashboard .modal-content {
+  background: #ffffff !important;
+  border: 1px solid var(--nk-line-20) !important;
+  border-radius: 16px !important;
+  color: var(--nk-ink) !important;
+  box-shadow: 0 24px 60px rgba(59, 52, 95, 0.25) !important;
+}
+.admin-dashboard .modal-header { border-bottom: 1px solid var(--nk-line-17) !important; background: transparent !important; }
+.admin-dashboard .modal-header h3 {
+  font-family: var(--nk-serif) !important;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  color: var(--nk-ink) !important;
+}
+.admin-dashboard .modal-close { color: var(--nk-ink-58) !important; background: transparent !important; }
+.admin-dashboard .modal-form label,
+.admin-dashboard .form-group label {
+  font-size: 10px !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: var(--nk-ink-72) !important;
+}
+.admin-dashboard .modal-form input,
+.admin-dashboard .modal-form select,
+.admin-dashboard .modal-form textarea,
+.admin-dashboard .form-group input,
+.admin-dashboard .form-group select,
+.admin-dashboard .form-group textarea {
+  background: var(--nk-well) !important;
+  border: 1px solid rgba(59, 52, 95, 0.2) !important;
+  border-radius: 10px !important;
+  color: var(--nk-ink) !important;
+  font-family: var(--nk-body) !important;
+}
+.admin-dashboard .modal-actions { border-top: 1px solid var(--nk-line-17) !important; background: transparent !important; }
+
+/* page banner */
+.admin-dashboard .admin-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid var(--nk-line-20) !important;
+  box-shadow: none !important;
+}
+.admin-dashboard .admin-title {
+  font-family: var(--nk-serif) !important;
+  font-weight: 700 !important;
+  color: var(--nk-ink) !important;
+}
+.admin-dashboard .admin-title::before { display: none !important; }
+
+/* recent activity */
+.admin-dashboard .activity-feed,
+.admin-dashboard .activity-feed > div,
+.admin-dashboard .recent-activity {
+  background: var(--nk-panel) !important;
+  border: 1px solid var(--nk-line-17) !important;
+  border-radius: 16px !important;
+  color: var(--nk-ink) !important;
+  box-shadow: none !important;
+}
+.admin-dashboard .activity-feed h3 {
+  font-family: var(--nk-serif) !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  color: var(--nk-ink) !important;
+}
+.admin-dashboard .activity-item {
+  background: #ffffff !important;
+  border: 1px solid rgba(59, 52, 95, 0.12) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+.admin-dashboard .activity-icon {
+  background: rgba(124, 92, 255, 0.1) !important;
+  color: var(--nk-accent-400) !important;
+  border-radius: 999px !important;
+}
+.admin-dashboard .activity-text { color: var(--nk-ink-90) !important; }
+.admin-dashboard .activity-time { color: var(--nk-ink-58) !important; }
