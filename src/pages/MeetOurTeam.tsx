@@ -212,7 +212,7 @@ const MeetOurTeam: React.FC = () => {
   const { teamMembers, fetchTeamMembers, isLoading } = useTeamStore();
   const { isAuthenticated, user, hasPermission } = useAuthStore();
   const [layout, setLayout] = useState<TeamLayout>(DEFAULT_TEAM_LAYOUT);
-  const [alumniOpen, setAlumniOpen] = useState(false);
+  const [alumniOpen, setAlumniOpen] = useState(true);
 
   const canManage = !!(isAuthenticated && user && hasPermission('basic_admin'));
 

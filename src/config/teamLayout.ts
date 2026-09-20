@@ -30,8 +30,8 @@ export const DEFAULT_SECTION_LAYOUT: SectionLayout = {
 
 export const DEFAULT_TEAM_LAYOUT: TeamLayout = {
   order: ALL_SECTIONS,
-  hidden: ['alumni', 'finance', 'concertmasters'],
-  sections: {},
+  hidden: ['finance', 'concertmasters'],
+  sections: { alumni: { ...DEFAULT_SECTION_LAYOUT, size: 'compact' } },
   intro: '',
   ctaText: 'Take your seat',
   ctaLink: 'mailto:on3keymusic@gmail.com?subject=Joining%20OneKey',
