@@ -70,8 +70,6 @@ const normalizeTeamMember = (member: TeamMemberRecord): TeamMember => ({
 });
 
 
-// Founders promoted to the top-of-page Founders section (matched by display name)
-const FOUNDER_NAMES = new Set(['Curtis Wei', 'Eliza Sun', 'Grace Xu', 'Jack Wang']);
 
 interface TeamState {
   teamMembers: TeamMember[];
@@ -111,22 +109,6 @@ export const useTeamStore = create<TeamState>()((set, get) => ({
         toMigrate.forEach(m => {
           m.sections = normalizeSections(m);
         });
-      }
-
-      // Promote the four founders → add 'founders', drop 'alumni' (one-time, idempotent, matched by name)
-      const foundersToMigrate = members.filter(m => {
-        if (!FOUNDER_NAMES.has(stringValue(m.name))) return false;
-        const current = normalizeSections(m);
-        return !current.includes('founders') || current.includes('alumni');
-      });
-      if (foundersToMigrate.length > 0) {
-        await Promise.all(foundersToMigrate.map(m => {
-          const next: SectionKey[] = Array.from(
-            new Set<SectionKey>([...normalizeSections(m).filter(s => s !== 'alumni'), 'founders'])
-          );
-          m.sections = next;
-          return apiService.updateTeamMember(stringValue(m.id), { sections: next });
-        }));
       }
 
       set({ teamMembers: members.map(normalizeTeamMember).filter(m => m.isActive !== false), isLoading: false });
